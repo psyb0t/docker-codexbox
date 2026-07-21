@@ -4,6 +4,22 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.0 — 2026-07-21
+
+Added `latest-full`, a Codex-native toolchain image layered on the minimal
+image. It mirrors Claudebox's full-image capabilities across Go, Python,
+JavaScript/TypeScript, database clients, editors, debuggers, network tools,
+GitHub CLI, Terraform, kubectl, and Helm. Downloaded standalone toolchains and
+CLIs are version-pinned and checksum-verified. The full image now also pins
+its parent images by digest and installs Node, Python, and Go toolchains from
+frozen, hash-verified dependency inputs; JavaScript lifecycle scripts are
+disabled and a fixed seven-day release-age gate is enforced when locks change.
+
+`CODEXBOX_FULL` now accepts exactly `0` (minimal, the default) or `1` (full).
+The installer pulls the selected tag and bakes that exact image into the
+installed wrapper. Hermetic regression coverage verifies installer/wrapper
+agreement, and a full-image smoke test checks every advertised tool.
+
 ## v0.2.0 — 2026-07-21
 
 The interactive TUI (`codexbox` with no subcommand) now defaults to
@@ -44,5 +60,4 @@ workspace, persists `~/.codex` (auth + config + sessions), forwards
 and manages a per-directory container: `codexbox` (interactive TUI),
 `codexbox exec "…"` (one-shot), `codexbox login --device-auth`
 (subscription OAuth), `codexbox stop`, `codexbox clear-session`, plus a
-`CODEXBOX_MODE_CRON` daemon. Single image (no minimal/full split), so no
-install-time variant to pick.
+`CODEXBOX_MODE_CRON` daemon.

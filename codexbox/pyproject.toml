@@ -1,6 +1,6 @@
 [project]
 name = "codexbox"
-version = "0.2.0"
+version = "0.3.0"
 description = "OpenAI Codex CLI adapter for the aicodebox base image"
 requires-python = ">=3.12"
 authors = [{ name = "psyb0t" }]

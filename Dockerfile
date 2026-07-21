@@ -38,6 +38,7 @@ RUN chmod +x /aicodebox-init.d/*.sh
 # below.
 ENV AICODEBOX_ADAPTER=codexbox.adapter:CodexAdapter \
     AICODEBOX_AGENT_BINARY=codexbox-agent \
+    CODEXBOX_IMAGE_VARIANT=minimal \
     CODEX_HOME=/home/aicode/.codex
 
 RUN mkdir -p /home/aicode/.codex && chown -R aicode:aicode /home/aicode/.codex

@@ -1,0 +1,179 @@
+# codexbox:latest-full — Codex plus the general-purpose development toolchain.
+#
+# This layers on the minimal image so both variants share the same Codex CLI,
+# adapter, entrypoint, and authentication behavior.
+ARG BASE_IMAGE=psyb0t/codexbox:v0.2.0@sha256:17412ed4154b5406696ca9d65e30fe71c5c296e17ec96133f6ffb9c8c3ff08e9
+FROM ${BASE_IMAGE}
+
+USER root
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    CODEXBOX_IMAGE_VARIANT=full
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential make cmake pkg-config libssl-dev \
+        python3-pip python-is-python3 \
+        nano vim htop tmux \
+        unzip zip tar \
+        net-tools iputils-ping dnsutils \
+        tree fd-find ripgrep bat eza silversearcher-ag \
+        shellcheck shfmt httpie \
+        clang-format valgrind gdb strace ltrace \
+        sqlite3 postgresql-client default-mysql-client redis-tools \
+        zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+        libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
+        libffi-dev liblzma-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG TARGETARCH
+
+ARG GO_VERSION=1.26.1
+ARG GO_SHA256_AMD64=031f088e5d955bab8657ede27ad4e3bc5b7c1ba281f05f245bcc304f327c987a
+ARG GO_SHA256_ARM64=a290581cfe4fe28ddd737dde3095f3dbeb7f2e4065cab4eae44dfc53b760c2f7
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) GO_SHA256="$GO_SHA256_AMD64" ;; \
+        arm64) GO_SHA256="$GO_SHA256_ARM64" ;; \
+        *) echo "unsupported Go architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    GO_ARCHIVE="/tmp/go${GO_VERSION}.linux-${ARCH}.tar.gz" && \
+    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o "$GO_ARCHIVE" && \
+    echo "$GO_SHA256  $GO_ARCHIVE" | sha256sum -c - && \
+    tar -xzf "$GO_ARCHIVE" -C /usr/local && \
+    rm -f "$GO_ARCHIVE" && \
+    ln -s /usr/local/go/bin/go /usr/local/bin/go && \
+    ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt && \
+    echo 'export PATH="$PATH:/usr/local/go/bin"' > /etc/profile.d/go.sh
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOPROXY=https://proxy.golang.org,direct \
+    GOSUMDB=sum.golang.org \
+    GOFLAGS=-mod=readonly
+
+ARG GOLANGCI_LINT_VERSION=2.12.2
+ARG GOLANGCI_LINT_SHA256_AMD64=8df580d2670fed8fa984aac0507099af8df275e665215f5c7a2ae3943893a553
+ARG GOLANGCI_LINT_SHA256_ARM64=44cd40a8c76c86755375adfeea52cfd3533cb43d7bd647771e0ae065e166df3a
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) LINT_SHA256="$GOLANGCI_LINT_SHA256_AMD64" ;; \
+        arm64) LINT_SHA256="$GOLANGCI_LINT_SHA256_ARM64" ;; \
+        *) echo "unsupported golangci-lint architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    LINT_ARCHIVE=/tmp/golangci-lint.tar.gz && \
+    curl -fsSL \
+        "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}.tar.gz" \
+        -o "$LINT_ARCHIVE" && \
+    echo "$LINT_SHA256  $LINT_ARCHIVE" | sha256sum -c - && \
+    tar -xzf "$LINT_ARCHIVE" -C /tmp && \
+    install -m 0755 \
+        "/tmp/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}/golangci-lint" \
+        /usr/local/bin/golangci-lint && \
+    rm -rf "$LINT_ARCHIVE" \
+        "/tmp/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}"
+
+COPY full-go/go.mod full-go/go.sum full-go/tools.txt /tmp/codexbox-go-tools/
+RUN cd /tmp/codexbox-go-tools && \
+    go mod download all && \
+    while IFS= read -r package; do \
+        case "$package" in \#*|'') continue ;; esac; \
+        binary="${package##*/}"; \
+        CGO_ENABLED=0 go build -mod=readonly -o "/usr/local/bin/$binary" "$package"; \
+    done < tools.txt && \
+    rm -rf /tmp/codexbox-go-tools /root/.cache/go-build
+
+ARG GH_VERSION=2.96.0
+ARG GH_SHA256_AMD64=83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60
+ARG GH_SHA256_ARM64=06f86ec7103d41993b76cd78072f43595c34aaa56506d971d9860e67140bf909
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) GH_SHA256="$GH_SHA256_AMD64" ;; \
+        arm64) GH_SHA256="$GH_SHA256_ARM64" ;; \
+        *) echo "unsupported gh architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    GH_ARCHIVE=/tmp/gh.tar.gz && \
+    curl -fsSL \
+        "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
+        -o "$GH_ARCHIVE" && \
+    echo "$GH_SHA256  $GH_ARCHIVE" | sha256sum -c - && \
+    tar -xzf "$GH_ARCHIVE" -C /tmp && \
+    install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh && \
+    rm -rf "$GH_ARCHIVE" "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
+
+ARG TERRAFORM_VERSION=1.15.8
+ARG TERRAFORM_SHA256_AMD64=d25ce7b6902013ad905db3d2eab0be4cd905887fe88b81a6171b8d5503c31f3d
+ARG TERRAFORM_SHA256_ARM64=8891e9dcedc9e3b8950bc6af9d4d8af1f4cfade3062f53b9dc403a89f6ce8c9c
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) TERRAFORM_SHA256="$TERRAFORM_SHA256_AMD64" ;; \
+        arm64) TERRAFORM_SHA256="$TERRAFORM_SHA256_ARM64" ;; \
+        *) echo "unsupported Terraform architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    TERRAFORM_ARCHIVE=/tmp/terraform.zip && \
+    curl -fsSL \
+        "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip" \
+        -o "$TERRAFORM_ARCHIVE" && \
+    echo "$TERRAFORM_SHA256  $TERRAFORM_ARCHIVE" | sha256sum -c - && \
+    unzip -q "$TERRAFORM_ARCHIVE" -d /tmp/terraform && \
+    install -m 0755 /tmp/terraform/terraform /usr/local/bin/terraform && \
+    rm -rf "$TERRAFORM_ARCHIVE" /tmp/terraform
+
+ARG KUBECTL_VERSION=v1.31.14
+ARG KUBECTL_SHA256_AMD64=8791ec7c8966b61420d55103a5fb948de9f0ca3d7306d789734975ad9704bdb0
+ARG KUBECTL_SHA256_ARM64=3abb0c2d7121e1833831f56fd857a93de386e76d14b64baf86220d0afe495209
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) KUBECTL_SHA256="$KUBECTL_SHA256_AMD64" ;; \
+        arm64) KUBECTL_SHA256="$KUBECTL_SHA256_ARM64" ;; \
+        *) echo "unsupported kubectl architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" \
+        -o /tmp/kubectl && \
+    echo "$KUBECTL_SHA256  /tmp/kubectl" | sha256sum -c - && \
+    install -m 0755 /tmp/kubectl /usr/local/bin/kubectl && \
+    rm -f /tmp/kubectl
+
+ARG HELM_VERSION=3.21.3
+ARG HELM_SHA256_AMD64=15e041a93a590dce8100f39385cd98c84a765c9e36aeeb9e2dc6ff9e4769e2e0
+ARG HELM_SHA256_ARM64=67f58155079ff9ffab98ba5c88daff0ed9b542f3a4732f5dd426dde7dd0f5244
+RUN ARCH="${TARGETARCH:-amd64}" && \
+    case "$ARCH" in \
+        amd64) HELM_SHA256="$HELM_SHA256_AMD64" ;; \
+        arm64) HELM_SHA256="$HELM_SHA256_ARM64" ;; \
+        *) echo "unsupported Helm architecture: $ARCH" >&2; exit 1 ;; \
+    esac && \
+    HELM_ARCHIVE=/tmp/helm.tar.gz && \
+    curl -fsSL "https://get.helm.sh/helm-v${HELM_VERSION}-linux-${ARCH}.tar.gz" \
+        -o "$HELM_ARCHIVE" && \
+    echo "$HELM_SHA256  $HELM_ARCHIVE" | sha256sum -c - && \
+    tar -xzf "$HELM_ARCHIVE" -C /tmp && \
+    install -m 0755 "/tmp/linux-${ARCH}/helm" /usr/local/bin/helm && \
+    rm -rf "$HELM_ARCHIVE" "/tmp/linux-${ARCH}"
+
+COPY full-node/package.json full-node/pnpm-lock.yaml full-node/.npmrc /opt/codexbox-node/
+RUN corepack pnpm@11.15.1 install --dir /opt/codexbox-node \
+        --frozen-lockfile --prod --ignore-scripts && \
+    find /opt/codexbox-node/node_modules/.bin -maxdepth 1 -type f -executable \
+        -exec ln -sf '{}' /usr/local/bin/ ';'
+
+ARG PYENV_VERSION=2.8.0
+ARG PYENV_SHA256=0773be07e7276f71496c387874ebeb780f8593468546a511bda7750da80c7d8a
+ARG PYTHON_VERSION=3.12.11
+ENV PYENV_ROOT=/usr/local/pyenv \
+    PATH="/usr/local/pyenv/shims:/usr/local/pyenv/bin:${PATH}"
+RUN PYENV_ARCHIVE=/tmp/pyenv.tar.gz && \
+    curl -fsSL "https://github.com/pyenv/pyenv/archive/refs/tags/v${PYENV_VERSION}.tar.gz" \
+        -o "$PYENV_ARCHIVE" && \
+    echo "$PYENV_SHA256  $PYENV_ARCHIVE" | sha256sum -c - && \
+    mkdir -p "$PYENV_ROOT" && \
+    tar -xzf "$PYENV_ARCHIVE" --strip-components=1 -C "$PYENV_ROOT" && \
+    rm -f "$PYENV_ARCHIVE" && \
+    pyenv install "$PYTHON_VERSION" && \
+    pyenv global "$PYTHON_VERSION" && \
+    { \
+        echo 'export PYENV_ROOT="/usr/local/pyenv"'; \
+        echo 'export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"'; \
+    } > /etc/profile.d/pyenv.sh
+
+COPY full-python/requirements.txt /tmp/codexbox-python-tools/requirements.txt
+RUN "$PYENV_ROOT/versions/$PYTHON_VERSION/bin/python" -m pip install --no-cache-dir \
+        --require-hashes -r /tmp/codexbox-python-tools/requirements.txt && \
+    pyenv rehash

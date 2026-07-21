@@ -17,13 +17,27 @@
 # passthrough) lives INSIDE the image in codexbox-agent — the wrapper forwards
 # "$@" untouched and lets the container decide.
 #
-# codexbox has a single image (no minimal/full split), so there is no variant
-# to bake in at install time.
+# install.sh rewrites this line so its minimal/full choice persists.
+CODEXBOX_INSTALLED_IMAGE="psyb0t/codexbox:latest"
 
 DEBUG="${CODEXBOX_ENV_DEBUG:-${DEBUG:-}}"
-dbg() { [ "${DEBUG:-}" = "true" ] && echo "[DEBUG $(date +%H:%M:%S.%3N)] $*" >&2; return 0; }
+dbg() {
+    [ "${DEBUG:-}" = "true" ] && echo "[DEBUG $(date +%H:%M:%S.%3N)] $*" >&2
+    return 0
+}
 
-CODEX_IMAGE="${CODEXBOX_IMAGE:-psyb0t/codexbox:latest}"
+CODEX_IMAGE="${CODEXBOX_IMAGE:-}"
+if [ -z "$CODEX_IMAGE" ]; then
+    case "${CODEXBOX_FULL:-}" in
+        "") CODEX_IMAGE="$CODEXBOX_INSTALLED_IMAGE" ;;
+        0) CODEX_IMAGE="psyb0t/codexbox:latest" ;;
+        1) CODEX_IMAGE="psyb0t/codexbox:latest-full" ;;
+        *)
+            echo "❌ CODEXBOX_FULL must be 0 or 1" >&2
+            exit 1
+            ;;
+    esac
+fi
 CODEX_DIR="${CODEXBOX_DATA_DIR:-$HOME/.codex}"
 CODEX_SSH="${CODEXBOX_SSH_DIR:-$HOME/.ssh/codexbox}"
 CODEX_MAX_MEM="${CODEXBOX_MAX_MEM:-10g}"
@@ -58,9 +72,9 @@ DOCKER_ARGS=(
 
 # Forward auth via -e. The key value is never echoed/logged (only its presence
 # gates the arg) — per the never-log-secrets rule.
-[ -n "$OPENAI_API_KEY" ]  && DOCKER_ARGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY")
+[ -n "$OPENAI_API_KEY" ] && DOCKER_ARGS+=(-e "OPENAI_API_KEY=$OPENAI_API_KEY")
 [ -n "$OPENAI_BASE_URL" ] && DOCKER_ARGS+=(-e "OPENAI_BASE_URL=$OPENAI_BASE_URL")
-[ "$DEBUG" = "true" ]     && DOCKER_ARGS+=(-e "DEBUG=true")
+[ "$DEBUG" = "true" ] && DOCKER_ARGS+=(-e "DEBUG=true")
 
 # forward CODEXBOX_ENV_* vars (strip prefix: FOO=bar)
 while IFS='=' read -r name value; do
@@ -74,7 +88,7 @@ done < <(env | grep -E "^CODEXBOX_ENV_")
 while IFS='=' read -r _name value; do
     case "$value" in
         *:*) DOCKER_ARGS+=(-v "$value") ;;
-        *)   DOCKER_ARGS+=(-v "$value:$value") ;;
+        *) DOCKER_ARGS+=(-v "$value:$value") ;;
     esac
     dbg "mounting volume: $value"
 done < <(env | grep -E "^CODEXBOX_MOUNT_")
@@ -140,7 +154,7 @@ if [ -n "$_mode_cron" ]; then
         -e "CODEXBOX_CONTAINER_NAME=$cron_name"
     )
     [ -n "$_mode_cron_file" ] && CRON_ARGS+=(-e "CODEXBOX_CRON_MODE_FILE=$_mode_cron_file")
-    [ "$DEBUG" = "true" ]     && CRON_ARGS+=(-e "DEBUG=true")
+    [ "$DEBUG" = "true" ] && CRON_ARGS+=(-e "DEBUG=true")
 
     if docker ps -a --format '{{.Names}}' | grep -q "^${cron_name}$"; then
         echo "restarting cron container ($cron_name)..."

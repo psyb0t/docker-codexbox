@@ -7,14 +7,28 @@
 
 # Local research / scratch
 .research_files/
+.agent_notes/
+.agent_knowledge/
 
 # Local tooling / scratch — never commit
+AGENTS.md
+CODEX.local.md
 CLAUDE.md
 ANUSTIMES.md
 PLAN.md
 implplan.md
+NOTES.md
+TODO.md
+WIP.md
 git-update.sh
 pyrightconfig.json
+.vscode/
+.idea/
+.editorconfig
+.envrc
+.tool-versions
+.python-version
+.nvmrc
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
@@ -28,6 +42,11 @@ tests/logs/
 tests/.logs/
 tests/.fixtures/
 .telemetry
+coverage.txt
+coverage.out
+profile.out
+.cover/
+htmlcov/
 
 # Per-run orchestration scaffolding — never commit
 .plan-and-delegate/

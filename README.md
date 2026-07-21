@@ -3,7 +3,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/psyb0t/codexbox?style=flat-square)](https://hub.docker.com/r/psyb0t/codexbox)
 [![License: WTFPL](https://img.shields.io/badge/License-WTFPL-brightgreen.svg?style=flat-square)](http://www.wtfpl.net/)
 
-[OpenAI Codex CLI](https://github.com/openai/codex) inside an [aicodebox](https://github.com/psyb0t/docker-aicodebox) container. One image, five ways in: interactive shell, one-shot exec, OpenAI-compatible endpoint, MCP server, Telegram bot, and a cron scheduler that fires codex on whatever schedule you want.
+[OpenAI Codex CLI](https://github.com/openai/codex) inside an [aicodebox](https://github.com/psyb0t/docker-aicodebox) container. Minimal and toolchain-loaded images, five ways in: interactive shell, one-shot exec, OpenAI-compatible endpoint, MCP server, Telegram bot, and a cron scheduler that fires codex on whatever schedule you want.
 
 You talk to codexbox. codexbox talks to codex. codex talks to OpenAI — or your ChatGPT subscription. Nobody cares about the middle.
 
@@ -11,6 +11,7 @@ You talk to codexbox. codexbox talks to codex. codex talks to OpenAI — or your
 
 - [Quick start](#quick-start)
 - [Install (the `codexbox` wrapper)](#install-the-codexbox-wrapper)
+- [Image variants](#image-variants)
 - [Modes](#modes)
   - [API mode](#api-mode)
   - [Telegram mode](#telegram-mode)
@@ -52,7 +53,11 @@ Typing the full `docker run` line every time is tedious. `install.sh` drops a `c
 git clone https://github.com/psyb0t/docker-codexbox.git
 cd docker-codexbox
 ./install.sh                         # pulls psyb0t/codexbox:latest + installs `codexbox`
+CODEXBOX_FULL=1 ./install.sh         # pulls latest-full and remembers it
 # or, without cloning:
+curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
+# full image without cloning:
+export CODEXBOX_FULL=1
 curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
 ```
 
@@ -76,6 +81,31 @@ The wrapper forwards `"$@"` straight to the image, so any `codex` subcommand wor
 
 The bare interactive TUI defaults to **continuing the most recent session for the directory you're in** (same idea as claudebox's default) — codex's own `resume --last` cwd-scopes the lookup and starts a fresh session automatically when there's nothing to resume, so this is safe on a brand-new workspace too. Pass `--no-continue` to force a fresh session instead.
 
+## Image variants
+
+- `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
+- `psyb0t/codexbox:latest-full` adds the general-purpose development toolchain from Claudebox's full image while retaining Codexbox's own adapter, entrypoint, auth, and config.
+
+`CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
+
+The full image adds:
+
+- Go 1.26.1 with gopls, Delve, golangci-lint, staticcheck, gofumpt, and test/code-generation helpers
+- Python 3.12.11 with pytest, Black, Flake8, mypy, Pyright, Poetry, Pipenv, and common HTTP/parsing libraries
+- JavaScript and TypeScript linting, formatting, process, framework, API-test, static-server, Lighthouse, and Storybook CLIs
+- GitHub CLI, Terraform, kubectl, and Helm
+- Build tools, CMake, ClangFormat, Valgrind, GDB, strace, and ltrace
+- PostgreSQL, MySQL, SQLite, and Redis clients
+- Vim, Nano, tmux, htop, archive tools, network diagnostics, ripgrep, fd, bat, eza, shellcheck, and shfmt
+
+The full variant is reproducible by design: its minimal parent and the
+published aicodebox parent are digest-pinned; Node tools install through a
+committed pnpm lockfile with lifecycle scripts disabled; Python tools install
+from a committed hash-locked requirements file; and Go tools build from a
+committed `go.sum` with the checksum database enabled. The lock inputs use a
+fixed seven-day release-age cutoff and are refreshed deliberately, not during
+an ordinary image build.
+
 ### Wrapper environment variables
 
 Set these on the host before running `codexbox`:
@@ -84,7 +114,8 @@ Set these on the host before running `codexbox`:
 |-----|---------|---------------|
 | `OPENAI_API_KEY` | — | API-key auth (seeded into `~/.codex/auth.json` on boot). Not needed for subscription login. |
 | `OPENAI_BASE_URL` | — | Point codex at an OpenAI-compatible endpoint |
-| `CODEXBOX_IMAGE` | `psyb0t/codexbox:latest` | Override the image the wrapper runs |
+| `CODEXBOX_IMAGE` | installed image | Override the image the wrapper runs |
+| `CODEXBOX_FULL` | installed choice (`0` initially) | `0` forces minimal; `1` forces full |
 | `CODEXBOX_DATA_DIR` | `~/.codex` | Host dir mounted as `CODEX_HOME` (auth + config + sessions) |
 | `CODEXBOX_SSH_DIR` | `~/.ssh/codexbox` | SSH key dir mounted into the container (for git over SSH) |
 | `CODEXBOX_MAX_MEM` | `10g` | Per-container memory limit |
@@ -337,7 +368,11 @@ Requires `psyb0t/docker-aicodebox` checked out next to this repo (`../docker-aic
 make help        # list targets
 make build-base  # build aicodebox-base from ../docker-aicodebox
 make build       # build codexbox:local on top of it
+make build-full  # build + tag the full toolchain variant
+make build-all   # build both variants
 make test        # run the full e2e suite (needs .env.test)
+make test-image-select # hermetic installer/wrapper variant regression
+make test-full-image   # build full and check every advertised tool
 make clean       # remove built images
 ```
 
@@ -352,6 +387,8 @@ make test
 ```
 
 Telegram tests auto-skip if `AICODEBOX_TELEGRAM_MODE_TOKEN` is empty. Everything else only needs `OPENAI_API_KEY` (and a real ChatGPT-subscription login, if you also want the subscription auth path exercised).
+
+`make test-image-select` needs neither credentials nor a Docker daemon. It proves `CODEXBOX_FULL=0|1` selects, pulls, and bakes the same image. `make test-full-image` builds `latest-full` and checks its variant marker, Codex, pinned Go/Python versions, and the advertised CLI matrix.
 
 ## License
 

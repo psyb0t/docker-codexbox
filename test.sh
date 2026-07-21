@@ -6,15 +6,20 @@
 #   KEEP_IMAGE=1 ./test.sh    # don't rmi codexbox:local at the end
 set -u
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 
 export TEST_LOG_DIR="${TEST_LOG_DIR:-$(pwd)/tests/.logs}"
 mkdir -p "$TEST_LOG_DIR"
 
 # shellcheck disable=SC1091
 source tests/common.sh
+# shellcheck source=tests/e2e-common.sh
+source tests/e2e-common.sh
 
 for f in tests/test_*.sh; do
+    case "$(basename "$f")" in
+        test_full_image.sh|test_image_select.sh) continue ;;
+    esac
     # shellcheck disable=SC1090
     source "$f"
 done

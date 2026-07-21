@@ -7,7 +7,15 @@
 set -euo pipefail
 
 readonly WRAPPER_URL="https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/wrapper.sh"
-readonly IMAGE="psyb0t/codexbox:latest"
+
+case "${CODEXBOX_FULL:-0}" in
+    0) readonly IMAGE="psyb0t/codexbox:latest" ;;
+    1) readonly IMAGE="psyb0t/codexbox:latest-full" ;;
+    *)
+        echo "❌ CODEXBOX_FULL must be 0 or 1" >&2
+        exit 1
+        ;;
+esac
 
 BIN_NAME="${1:-${CODEXBOX_BIN_NAME:-codexbox}}"
 INSTALL_DIR="${CODEXBOX_INSTALL_DIR:-/usr/local/bin}"
@@ -63,6 +71,22 @@ if [ ! -s "$WRAPPER_TMP" ]; then
     echo "❌ wrapper.sh is empty — download failed" >&2
     exit 1
 fi
+
+echo "📝 Baking image into wrapper: $IMAGE"
+if ! grep -q '^CODEXBOX_INSTALLED_IMAGE=' "$WRAPPER_TMP"; then
+    echo "❌ wrapper.sh has no CODEXBOX_INSTALLED_IMAGE line" >&2
+    exit 1
+fi
+
+WRAPPER_BAKED_TMP="$(mktemp /tmp/codexbox-wrapper-baked-XXXXXX.sh)"
+trap 'rm -f "$WRAPPER_TMP" "$WRAPPER_BAKED_TMP"' EXIT
+if ! sed \
+    "s|^CODEXBOX_INSTALLED_IMAGE=.*|CODEXBOX_INSTALLED_IMAGE=\"$IMAGE\"|" \
+    "$WRAPPER_TMP" >"$WRAPPER_BAKED_TMP" || [ ! -s "$WRAPPER_BAKED_TMP" ]; then
+    echo "❌ Failed to bake image into wrapper" >&2
+    exit 1
+fi
+mv "$WRAPPER_BAKED_TMP" "$WRAPPER_TMP"
 
 echo "📝 Installing $BIN_NAME to $BIN_PATH..."
 sudo install -m 755 "$WRAPPER_TMP" "$BIN_PATH"
