@@ -10,7 +10,7 @@ You talk to codexbox. codexbox talks to codex. codex talks to OpenAI — or your
 ## Table of Contents
 
 - [Quick start](#quick-start)
-- [Install (the `codexbox` wrapper)](#install-the-codexbox-wrapper)
+- [Using the `codexbox` wrapper](#using-the-codexbox-wrapper)
 - [Image variants](#image-variants)
 - [Modes](#modes)
   - [API mode](#api-mode)
@@ -24,44 +24,33 @@ You talk to codexbox. codexbox talks to codex. codex talks to OpenAI — or your
 
 ## Quick start
 
-```bash
-# one-shot prompt (passthrough → codexbox-agent maps `exec ...` onto
-# `codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check ...`)
-docker run --rm \
-  -e OPENAI_API_KEY=sk-... \
-  -v "$PWD/.codex:/home/aicode/.codex" \
-  psyb0t/codexbox:latest \
-  exec "list the files in /workspace"
+Docker installed and running is the only prerequisite.
 
-# API server
-docker run -d --network host \
-  -e CODEXBOX_API_MODE=1 \
-  -e CODEXBOX_API_MODE_TOKEN=your-secret \
-  -e OPENAI_API_KEY=sk-... \
-  -v "$PWD/workspace:/workspace" \
-  -v "$PWD/.codex:/home/aicode/.codex" \
-  psyb0t/codexbox:latest
-```
+### One-liner install
 
-Bind-mounting `.codex` (→ `/home/aicode/.codex`) is optional for a quick one-shot API-key run, but **required** if you want auth to survive container recreates — see [Auth](#auth), especially if you're on a ChatGPT subscription instead of an API key.
-
-## Install (the `codexbox` wrapper)
-
-Typing the full `docker run` line every time is tedious. `install.sh` drops a `codexbox` command on your `PATH` that wraps it — it mounts the current directory as the workspace, persists `~/.codex` (so your login sticks), forwards auth/env, and manages a per-directory container for you.
+The installer pulls the selected image, creates the persistent Codex and SSH
+directories, downloads the wrapper, and installs `codexbox` on your `PATH`.
 
 ```bash
-git clone https://github.com/psyb0t/docker-codexbox.git
-cd docker-codexbox
-./install.sh                         # pulls psyb0t/codexbox:latest + installs `codexbox`
-CODEXBOX_FULL=1 ./install.sh         # pulls latest-full and remembers it
-# or, without cloning:
+# minimal image — default
 curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
-# full image without cloning:
-export CODEXBOX_FULL=1
-curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
+
+# full image — every development tool pre-installed
+export CODEXBOX_FULL=1 && curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
+
+# custom command name
+curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash -s -- codex
 ```
 
-Then, from **any** project directory:
+Installing with `CODEXBOX_FULL=1` bakes `latest-full` into the wrapper, so the
+choice persists; you do not need to export it again. `CODEXBOX_FULL` must be
+set for `bash`, not merely for `curl`, hence the `export … &&` form above.
+
+## Using the `codexbox` wrapper
+
+The wrapper mounts the current directory as the workspace, persists `~/.codex`
+(so login survives container recreation), forwards auth and configured
+environment variables, and manages a per-directory container.
 
 ```bash
 export OPENAI_API_KEY=sk-...         # or use a subscription: `codexbox login --device-auth`
@@ -80,6 +69,12 @@ codexbox clear-session               # drop codex's saved sessions (keeps auth +
 The wrapper forwards `"$@"` straight to the image, so any `codex` subcommand works (`codexbox mcp ...`, `codexbox doctor`, etc.). The sandbox-bypass flag is injected inside the container — you never pass it yourself.
 
 The bare interactive TUI defaults to **continuing the most recent session for the directory you're in** (same idea as claudebox's default) — codex's own `resume --last` cwd-scopes the lookup and starts a fresh session automatically when there's nothing to resume, so this is safe on a brand-new workspace too. Pass `--no-continue` to force a fresh session instead.
+
+### Manual Docker use
+
+Use raw Docker only when you intentionally do not want the wrapper, such as a
+one-shot run or a long-running API service. The [Modes](#modes) section has
+the relevant commands and configuration.
 
 ## Image variants
 
@@ -125,7 +120,7 @@ Set these on the host before running `codexbox`:
 
 `CODEXBOX_MODE_CRON=1` + `CODEXBOX_MODE_CRON_FILE=/path/cron.yaml codexbox` starts the cron scheduler as a long-running background container instead.
 
-**Prefer no host install?** Everything the wrapper does is a plain `docker run` — the [Quick start](#quick-start) and [Modes](#modes) sections show the raw commands.
+**Prefer no host install?** Everything the wrapper does is plain `docker run`; see [Manual Docker use](#manual-docker-use) and [Modes](#modes).
 
 ## Modes
 

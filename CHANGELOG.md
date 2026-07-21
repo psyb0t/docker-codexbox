@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.2 — 2026-07-21
+
+The README now leads with copy-paste one-line installer commands for both the
+minimal and full images, matching Claudebox's installation flow. Raw Docker
+commands are documented only for intentional manual use.
+
 ## v0.3.1 — 2026-07-21
 
 The release pipeline now publishes both minimal and `-full` multi-architecture
