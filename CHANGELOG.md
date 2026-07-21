@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.1 — 2026-07-21
+
+The release pipeline now publishes both minimal and `-full` multi-architecture
+image variants, building the full image after its minimal parent is available.
+Reusable GitHub Actions workflows are pinned to an immutable revision.
+
 ## v0.3.0 — 2026-07-21
 
 Added `latest-full`, a Codex-native toolchain image layered on the minimal

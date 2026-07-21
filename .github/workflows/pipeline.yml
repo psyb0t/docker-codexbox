@@ -4,13 +4,16 @@ on: [push]
 
 jobs:
   call-docker-image-workflow:
-    uses: psyb0t/reusable-github-workflows/.github/workflows/docker-image-workflow.yml@master
+    uses: psyb0t/reusable-github-workflows/.github/workflows/docker-image-workflow.yml@00dcfe7beb3e92cff5cfc37f6ca73a39873a8873 # master
 
     with:
       repository_name: psyb0t/codexbox
       target_platforms: "linux/amd64,linux/arm64"
       scan_severity: "high"
       cache_mode: "min"
+      # The full image inherits the minimal tag, so stage 1 must wait until
+      # stage 0 has pushed this release's minimal image.
+      build_targets: '[{"file":"Dockerfile","tag_suffix":""},{"file":"Dockerfile.full","tag_suffix":"-full","stage":1}]'
 
     secrets:
       dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}

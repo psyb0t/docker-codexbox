@@ -36,6 +36,7 @@ __pycache__/
 *.pyc
 *.egg-info/
 .venv/
+full-node/.pnpm-store/
 
 # Test artifacts
 tests/logs/

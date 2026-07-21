@@ -40,6 +40,7 @@ __pycache__
 .pytest_cache
 .ruff_cache
 **/.venv
+full-node/.pnpm-store
 .telemetry/
 coverage.txt
 coverage.out
