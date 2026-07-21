@@ -61,7 +61,8 @@ Then, from **any** project directory:
 ```bash
 export OPENAI_API_KEY=sk-...         # or use a subscription: `codexbox login --device-auth`
 
-codexbox                             # interactive TUI in a container for THIS dir
+codexbox                             # interactive TUI — continues the last session for THIS dir
+codexbox --no-continue               # same, but starts a brand-new session instead
 codexbox exec "fix the failing test in ./app"   # one-shot codex exec, output to your terminal
 echo "summarize README.md" | codexbox exec -     # prompt via stdin
 codexbox login --device-auth         # ChatGPT-subscription OAuth login (persists in ~/.codex)
@@ -72,6 +73,8 @@ codexbox clear-session               # drop codex's saved sessions (keeps auth +
 ```
 
 The wrapper forwards `"$@"` straight to the image, so any `codex` subcommand works (`codexbox mcp ...`, `codexbox doctor`, etc.). The sandbox-bypass flag is injected inside the container — you never pass it yourself.
+
+The bare interactive TUI defaults to **continuing the most recent session for the directory you're in** (same idea as claudebox's default) — codex's own `resume --last` cwd-scopes the lookup and starts a fresh session automatically when there's nothing to resume, so this is safe on a brand-new workspace too. Pass `--no-continue` to force a fresh session instead.
 
 ### Wrapper environment variables
 

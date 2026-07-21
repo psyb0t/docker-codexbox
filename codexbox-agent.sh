@@ -17,6 +17,7 @@ set -euo pipefail
 
 readonly CODEX_BIN="codex"
 readonly BYPASS='--dangerously-bypass-approvals-and-sandbox'
+readonly NO_CONTINUE_FLAG='--no-continue'
 
 dbg() {
     [ "${DEBUG:-}" = "true" ] && printf '[codexbox-agent] %s\n' "$*" >&2
@@ -48,8 +49,28 @@ case "${1:-}" in
         ;;
 esac
 
-# Bare interactive TUI / prompt — no recognized subcommand. Run the bypass
-# flag so the interactive TUI also skips approval prompts in the sandboxed
-# container, matching the non-interactive `exec` path above.
-dbg "launching interactive TUI with bypass"
-exec "$CODEX_BIN" "$BYPASS" "$@"
+# Bare interactive TUI / prompt — no recognized subcommand. Defaults to
+# continuing the workspace's most recent session (matches claudebox's
+# --continue default). `codex resume --last` already cwd-scopes its session
+# lookup and falls back to a fresh session internally when nothing matches
+# (SessionSelection::StartFresh in codex's own source) — no shell-side
+# `|| fresh-session` fallback needed here, unlike claude. --no-continue opts
+# out and forces a fresh session; it's a codexbox-only flag, stripped before
+# exec since codex itself doesn't recognize it.
+want_continue=1
+args=()
+for arg in "$@"; do
+    if [ "$arg" = "$NO_CONTINUE_FLAG" ]; then
+        want_continue=0
+        continue
+    fi
+    args+=("$arg")
+done
+
+if [ "$want_continue" -eq 1 ]; then
+    dbg "launching interactive TUI, continuing last session for this workspace"
+    exec "$CODEX_BIN" resume --last "$BYPASS" ${args[@]+"${args[@]}"}
+fi
+
+dbg "launching interactive TUI, $NO_CONTINUE_FLAG requested — fresh session"
+exec "$CODEX_BIN" "$BYPASS" ${args[@]+"${args[@]}"}

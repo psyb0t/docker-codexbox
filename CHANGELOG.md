@@ -4,6 +4,18 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.2.0 — 2026-07-21
+
+The interactive TUI (`codexbox` with no subcommand) now defaults to
+continuing the most recent session for the current directory instead of
+always starting fresh — the same default as docker-claudebox. codex's own
+`resume --last` scopes its session lookup to the current directory and
+falls back to a brand-new session automatically when nothing matches, so
+this is safe even on a workspace with no prior history. Pass
+`--no-continue` to opt out and force a new session, matching
+docker-claudebox's flag of the same name. Other invocations (`codexbox
+exec ...`, `codexbox login ...`, etc.) are unaffected.
+
 ## v0.1.0 — 2026-07-21
 
 Initial release. OpenAI Codex CLI on the aicodebox base — thin child
