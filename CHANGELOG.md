@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.3 — 2026-07-22
+
+The full-image build retries its complete apt package transaction with freshly
+downloaded indexes, preventing transient Ubuntu mirror publication races from
+breaking the arm64 release build.
+
 ## v0.3.2 — 2026-07-21
 
 The README now leads with copy-paste one-line installer commands for both the
