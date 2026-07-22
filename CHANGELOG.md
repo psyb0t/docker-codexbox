@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.4 — 2026-07-22
+
+Codexbox now pins the reusable Docker workflow at `v0.8.1`, so a GitHub
+Actions cache-service error cannot cancel an otherwise successful image push.
+
 ## v0.3.3 — 2026-07-22
 
 The full-image build retries its complete apt package transaction with freshly

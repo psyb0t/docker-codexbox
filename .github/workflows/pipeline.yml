@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   call-docker-image-workflow:
-    uses: psyb0t/reusable-github-workflows/.github/workflows/docker-image-workflow.yml@00dcfe7beb3e92cff5cfc37f6ca73a39873a8873 # master
+    uses: psyb0t/reusable-github-workflows/.github/workflows/docker-image-workflow.yml@bd02aba0e73223fcdaff35bd4f090aada9b660fc # v0.8.1
 
     with:
       repository_name: psyb0t/codexbox
