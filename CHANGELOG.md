@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.3.5 — 2026-07-22
+
+Full-image apt installation now enforces bounded network timeouts and retries
+amd64 package downloads through verified Ubuntu mirrors when the primary
+archive is slow or unavailable.
+
 ## v0.3.4 — 2026-07-22
 
 Codexbox now pins the reusable Docker workflow at `v0.8.1`, so a GitHub
