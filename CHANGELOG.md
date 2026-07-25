@@ -4,6 +4,15 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.0 — 2026-07-25
+
+ClawHub skill + plugin, and README endpoint corrections.
+
+- **New `codexbox` agent skill** (`.agents/skills/codexbox/`) documenting every mode the box exposes — interactive shell, one-shot exec, the REST API, the OpenAI-compatible `/openai/v1/chat/completions` endpoint, the streamable-HTTP MCP server, the Telegram bot, and the cron scheduler.
+- **New `@psyb0t/codexbox` code plugin** (`.agents/plugins/codexbox/`) — a stdio↔HTTP MCP bridge (`mcp-remote`) so an OpenClaw/MCP agent can drive a running box's `/mcp` endpoint. MIT-licensed.
+- **CI publishes both to ClawHub** on tag pushes via the reusable `clawhub-publish.yml` (validate → publish, skills + plugins).
+- **README corrected** to match the actual REST surface: `POST /run` returns `{runId, workspace, exitCode, text, …}` and takes `"async": true` in the body (there is no `/run/async`); async polling is `GET /run/result?runId=<id>`; cancel is `DELETE /run/{run_id}`; codex system-prompt injection is `-c instructions=…`.
+
 ## v0.3.5 — 2026-07-22
 
 Full-image apt installation now enforces bounded network timeouts and retries

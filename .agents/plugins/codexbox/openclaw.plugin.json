@@ -1,0 +1,39 @@
+{
+  "name": "@psyb0t/codexbox",
+  "id": "@psyb0t/codexbox",
+  "version": "0.0.0",
+  "type": "code-plugin",
+  "summary": "Wire an OpenClaw agent to a self-hosted codexbox (OpenAI Codex CLI) instance over MCP.",
+  "description": "A thin stdio<->HTTP bridge that connects an MCP client (OpenClaw, Claude, Cursor, Codex, ...) to a running codexbox instance's MCP endpoint (/mcp), exposing its file-ops + prompt-running tools: run_prompt (invoke Codex on the box), list_files, read_file, write_file, delete_file. codexbox is self-hosted — you run the server yourself (Docker image, OpenAI Codex CLI inside an aicodebox container) and point this bridge at it. See https://github.com/psyb0t/docker-codexbox.",
+  "extensions": ["./bin/cli.js"],
+  "compat": {
+    "pluginApi": ">=2026.3.24-beta.2"
+  },
+  "build": {
+    "openclawVersion": "2026.3.24-beta.2"
+  },
+  "environment": {
+    "CODEXBOX_URL": {
+      "required": true,
+      "description": "Base URL of your running codexbox server, e.g. http://localhost:8080 (the bridge appends /mcp)."
+    },
+    "CODEXBOX_MCP_MODE_TOKEN": {
+      "required": false,
+      "description": "Bearer token, only if the codexbox server was started with CODEXBOX_MCP_MODE_TOKEN set."
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "required": ["url"],
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Base URL of your running codexbox server, e.g. http://localhost:8080 (the bridge appends /mcp)."
+      },
+      "token": {
+        "type": "string",
+        "description": "Bearer token, only if the codexbox server was started with CODEXBOX_MCP_MODE_TOKEN set."
+      }
+    }
+  }
+}

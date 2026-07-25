@@ -138,10 +138,9 @@ Set these on the host before running `codexbox`:
 |--------|------|--------------|
 | `GET` | `/healthz` | liveness |
 | `GET` | `/status` | in-flight runs |
-| `POST` | `/run` | sync agent run → `{text, exit_code, ...}` |
-| `POST` | `/run/async` | fire and get a job id back |
-| `GET` | `/run/{id}` | poll async job |
-| `POST` | `/run/{id}/cancel` | kill in-flight run |
+| `POST` | `/run` | sync agent run → `{runId, workspace, exitCode, text, ...}`; pass `"async": true` in the body to fire and get a `runId` back instead |
+| `GET` | `/run/result?runId=<id>` | poll async job |
+| `DELETE` | `/run/{run_id}` | kill in-flight run |
 | `GET` | `/files` | list the workspace root (`{entries: [{name, type, size?}, ...]}`) |
 | `GET` | `/files/{path}` | list a sub-directory, or stream a file's bytes |
 | `PUT` | `/files/{path}` | upload — raw request body becomes the file contents; parent dirs auto-created |
@@ -176,7 +175,7 @@ curl -sS -X DELETE -H "Authorization: Bearer your-secret" \
 
 > Codex has **native JSON-schema enforcement** (`--output-schema`) — of the adapters on the aicodebox base, codex is the only one that doesn't need self-correction retries to get schema-conforming output; `jsonSchema` maps straight onto codex's own structured-output flag.
 
-`appendSystemPrompt` and `systemPrompt` have no direct codex equivalent — codex has no `--append-system-prompt` flag; system-prompt injection there is via `AGENTS.md` in the workspace or `-c base_instructions=...`, not a per-request field. `noTools` / `toolsAllowlist` are accepted for API compatibility with the other adapters but codex has no per-tool allowlist or "disable internal tools" switch, so they're logged and ignored.
+`appendSystemPrompt` and `systemPrompt` have no direct codex equivalent — codex has no `--append-system-prompt` flag; system-prompt injection there is via `AGENTS.md` in the workspace or `-c instructions=...`, not a per-request field. `noTools` / `toolsAllowlist` are accepted for API compatibility with the other adapters but codex has no per-tool allowlist or "disable internal tools" switch, so they're logged and ignored.
 
 ```bash
 curl -s http://localhost:8080/run \
@@ -238,7 +237,7 @@ Each run gets a history dir at `$HOME/.aicodebox/cron/history/<workspace>/<times
 
 Auth: `CODEXBOX_MCP_MODE_TOKEN=<token>` — bearer in the `Authorization: Bearer …` header, or `?apiToken=…` for clients that can't set headers. Empty = no auth. **No fallback to `API_MODE_TOKEN`** — MCP has its own bearer.
 
-This is the aicodebox base's own MCP surface (file ops + prompt running over MCP). It's separate from codex's own MCP support — codex can also act as an MCP *client* (`[mcp_servers.*]` in `config.toml`) and an MCP *server* (`codex mcp-server`, stdio); neither of those is wired up by codexbox v0.1.0.
+This is the aicodebox base's own MCP surface (file ops + prompt running over MCP). It's separate from codex's own MCP support — codex can also act as an MCP *client* (`[mcp_servers.*]` in `config.toml`) and an MCP *server* (`codex mcp-server`, stdio); neither of those is wired up by codexbox.
 
 ## Configuration
 
