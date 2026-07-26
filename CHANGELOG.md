@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.3 — 2026-07-26
+
+Third-party license notices. Documentation only, no behavior change.
+
+- Added `THIRD_PARTY.md` + `LICENSES/` documenting the image-bundled OpenAI Codex CLI (Apache-2.0) and, in the full image, BUSL-1.1 Terraform; corrected the README license note. The project's own code stays WTFPL.
+
 ## v0.4.2 — 2026-07-26
 
 Skill docs de-duplicated. Documentation only, no behavior change.

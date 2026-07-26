@@ -101,6 +101,14 @@ committed `go.sum` with the checksum database enabled. The lock inputs use a
 fixed seven-day release-age cutoff and are refreshed deliberately, not during
 an ordinary image build.
 
+**Licensing note:** the minimal image is clean — just Apache-2.0 Codex on
+top of the aicodebox base. The full image additionally bundles HashiCorp
+Terraform, which is BUSL-1.1 (source-available, non-compete), not
+OSI-approved open source. If that matters to your use case, stick to the
+minimal image or review the [BUSL-1.1 terms](https://github.com/hashicorp/terraform/blob/main/LICENSE)
+yourself before using `latest-full`. Full breakdown in
+[THIRD_PARTY.md](THIRD_PARTY.md).
+
 ### Wrapper environment variables
 
 Set these on the host before running `codexbox`:
@@ -387,3 +395,7 @@ Telegram tests auto-skip if `AICODEBOX_TELEGRAM_MODE_TOKEN` is empty. Everything
 ## License
 
 WTFPL — see [LICENSE](LICENSE). Do what the fuck you want.
+
+Third-party components bundled in the published images (Codex, and — full
+image only — Terraform, gh, kubectl, Helm, golangci-lint) keep their own
+licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
