@@ -1,5 +1,7 @@
 # codexbox setup
 
+See [SKILL.md](../SKILL.md#security--safety) for the full destructive-operation and unauthenticated-surface warnings before running any mode that binds a port.
+
 ## Requirements
 
 - Docker
@@ -8,7 +10,19 @@
 
 ## Quick Install (wrapper)
 
-The one-liner installer pulls the image, creates persistent Codex/SSH dirs, and installs the `codexbox` wrapper on `PATH`:
+The one-liner installer pulls the image, creates persistent Codex/SSH dirs, and installs the `codexbox` wrapper on `PATH`.
+
+**Recommended: download, inspect, then run.** Piping a remote script straight into bash executes unreviewed remote code as you. Download it, read it, then run it:
+
+```bash
+curl -fsSL -o install.sh https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh
+less install.sh          # read it before running anything
+bash install.sh          # minimal image — default
+# CODEXBOX_FULL=1 bash install.sh        # full image — every development tool pre-installed
+# bash install.sh codex                  # custom command name
+```
+
+**Piped one-liner (only if you already trust the source and channel):**
 
 ```bash
 # minimal image — default
@@ -21,7 +35,7 @@ export CODEXBOX_FULL=1 && curl -fsSL https://raw.githubusercontent.com/psyb0t/do
 curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash -s -- codex
 ```
 
-`CODEXBOX_FULL=1` must be exported before the pipe, not just set for `curl` — the installer needs it in `bash`'s environment. The choice is baked into the installed wrapper; you don't need to export it again afterward.
+`CODEXBOX_FULL=1` must be exported/set before `install.sh` runs, not just for `curl` — the installer needs it in `bash`'s environment. The choice is baked into the installed wrapper; you don't need to export it again afterward.
 
 **Verify:** `codexbox --version` should print the codex CLI version.
 
@@ -88,6 +102,8 @@ Foreground modes (API/Telegram/Cron) are mutually exclusive, except Telegram+Cro
 | `CODEXBOX_API_MODE_PORT` | `8080` | Port the API server binds to |
 | `CODEXBOX_API_MODE_TOKEN` | empty | Bearer token for the API surface (`/run`, `/files/*`, `/openai/v1/*`). Empty = no auth |
 
+**No auth when `CODEXBOX_API_MODE_TOKEN` is unset.** With it empty the API surface (`/run`, `/files/*`, `/openai/v1/*`) is UNAUTHENTICATED — anyone who can reach it gets run-execution and full workspace file read/write/delete access. NEVER expose such an instance on a network or to untrusted agents; set the token and bind to loopback / behind an authenticating proxy.
+
 ### Telegram mode config
 
 | Var | Default | What it does |
@@ -109,6 +125,8 @@ Foreground modes (API/Telegram/Cron) are mutually exclusive, except Telegram+Cro
 |---|---|---|
 | `CODEXBOX_MCP_MODE_PORT` | `8081` | Port the sidecar MCP server binds to (ignored when mounted inside API mode) |
 | `CODEXBOX_MCP_MODE_TOKEN` | empty | Bearer token for MCP. Empty = no auth. No fallback to `API_MODE_TOKEN` |
+
+**No auth when `CODEXBOX_MCP_MODE_TOKEN` is unset.** With it empty the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is UNAUTHENTICATED — anyone who can reach it gets full workspace file read/write/delete access, including the irreversible `delete_file` tool. Setting `CODEXBOX_API_MODE_TOKEN` does not protect this surface. NEVER expose such an instance on a network or to untrusted agents; set the token and bind to loopback / behind an authenticating proxy.
 
 ### Workspace & runtime
 

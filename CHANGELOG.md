@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.1 — 2026-07-26
+
+Skill docs hardened with explicit destructive-operation guardrails and auth warnings.
+
+- **`SKILL.md` and `references/setup.md`** now carry a `Security & safety` section plus inline warnings at every relevant call site: the API and MCP surfaces are called out as unauthenticated when `CODEXBOX_API_MODE_TOKEN` / `CODEXBOX_MCP_MODE_TOKEN` are left empty, `DELETE /files/{path}` / `delete_file` is marked destructive-and-irreversible with agent-confirmation guidance, and the one-line installer now documents a download-inspect-run path alongside the existing piped `curl | bash` form.
+- No behavior change — documentation only.
+
 ## v0.4.0 — 2026-07-25
 
 ClawHub skill + plugin, and README endpoint corrections.
