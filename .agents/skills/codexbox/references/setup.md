@@ -22,20 +22,7 @@ bash install.sh          # minimal image — default
 # bash install.sh codex                  # custom command name
 ```
 
-**Piped one-liner (only if you already trust the source and channel):**
-
-```bash
-# minimal image — default
-curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
-
-# full image — every development tool pre-installed
-export CODEXBOX_FULL=1 && curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash
-
-# custom command name
-curl -fsSL https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/install.sh | bash -s -- codex
-```
-
-`CODEXBOX_FULL=1` must be exported/set before `install.sh` runs, not just for `curl` — the installer needs it in `bash`'s environment. The choice is baked into the installed wrapper; you don't need to export it again afterward.
+`CODEXBOX_FULL=1` must be set before `install.sh` runs — the installer needs it in `bash`'s environment. The choice is baked into the installed wrapper; you don't need to set it again afterward.
 
 **Verify:** `codexbox --version` should print the codex CLI version.
 
@@ -102,7 +89,7 @@ Foreground modes (API/Telegram/Cron) are mutually exclusive, except Telegram+Cro
 | `CODEXBOX_API_MODE_PORT` | `8080` | Port the API server binds to |
 | `CODEXBOX_API_MODE_TOKEN` | empty | Bearer token for the API surface (`/run`, `/files/*`, `/openai/v1/*`). Empty = no auth |
 
-**No auth when `CODEXBOX_API_MODE_TOKEN` is unset.** With it empty the API surface (`/run`, `/files/*`, `/openai/v1/*`) is UNAUTHENTICATED — anyone who can reach it gets run-execution and full workspace file read/write/delete access. NEVER expose such an instance on a network or to untrusted agents; set the token and bind to loopback / behind an authenticating proxy.
+With `CODEXBOX_API_MODE_TOKEN` unset the API surface (`/run`, `/files/*`, `/openai/v1/*`) is unauthenticated — anyone who can reach it gets run-execution and full workspace file access. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
 
 ### Telegram mode config
 
@@ -126,7 +113,7 @@ Foreground modes (API/Telegram/Cron) are mutually exclusive, except Telegram+Cro
 | `CODEXBOX_MCP_MODE_PORT` | `8081` | Port the sidecar MCP server binds to (ignored when mounted inside API mode) |
 | `CODEXBOX_MCP_MODE_TOKEN` | empty | Bearer token for MCP. Empty = no auth. No fallback to `API_MODE_TOKEN` |
 
-**No auth when `CODEXBOX_MCP_MODE_TOKEN` is unset.** With it empty the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is UNAUTHENTICATED — anyone who can reach it gets full workspace file read/write/delete access, including the irreversible `delete_file` tool. Setting `CODEXBOX_API_MODE_TOKEN` does not protect this surface. NEVER expose such an instance on a network or to untrusted agents; set the token and bind to loopback / behind an authenticating proxy.
+With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is unauthenticated — anyone who can reach it gets full workspace file access. This surface has its own bearer; setting `CODEXBOX_API_MODE_TOKEN` does not protect it. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
 
 ### Workspace & runtime
 

@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.2 — 2026-07-26
+
+Skill docs de-duplicated. Documentation only, no behavior change.
+
+- Merged the duplicated API/MCP no-auth notes in `.agents/skills/codexbox/` into one, consolidated the file-deletion note, and simplified the install docs to the download-inspect-run flow (dropped the redundant piped one-liner variants).
+
 ## v0.4.1 — 2026-07-26
 
 Skill docs hardened with explicit destructive-operation guardrails and auth warnings.

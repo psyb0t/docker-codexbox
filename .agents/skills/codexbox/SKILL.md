@@ -15,9 +15,8 @@ For installation and configuration, see [references/setup.md](references/setup.m
 
 ## Security & safety
 
-- **No auth when `CODEXBOX_API_MODE_TOKEN` is unset.** With it empty the API surface (`/run`, `/files/*`, `/openai/v1/*`) is UNAUTHENTICATED — anyone who can reach it gets run-execution and full workspace file-read/write/delete access. NEVER expose such an instance on a network or to untrusted agents; set the token and bind to loopback / behind an authenticating proxy.
-- **No auth when `CODEXBOX_MCP_MODE_TOKEN` is unset.** Same rule for the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) — it has its own bearer with no fallback to `CODEXBOX_API_MODE_TOKEN`, so setting the API token alone does not protect it. Empty means anyone reaching `/mcp` (or the standalone sidecar) gets the same access, unauthenticated.
-- **`delete_file` / `DELETE /files/{path}` is destructive & irreversible.** It removes a workspace file with no undo (it refuses directories, but a single file delete cannot be recovered). An agent must NEVER call it unless the user explicitly asked for that exact deletion; confirm the specific target path first, scope it to the current task, and never enumerate-then-bulk-delete across the workspace. On a workspace shared by other callers/runs this can destroy another caller's data — treat it as admin-only.
+- **Set the mode tokens before exposing a port.** `CODEXBOX_API_MODE_TOKEN` (REST) and `CODEXBOX_MCP_MODE_TOKEN` (MCP) each default to no auth when unset, leaving that surface open to anyone who can reach it — run-execution plus full workspace file access. The two are independent (the MCP token has no fallback to the API token), so set whichever mode(s) you enable, and bind to loopback / behind an authenticating proxy. Per-mode detail: [HTTP REST API mode](#http-rest-api-mode), [MCP server mode](#mcp-server-mode).
+- **File deletion has no undo** — the run/file tools include a remove operation; only delete files the current task created, only when the user asked, and don't touch another caller's data on a shared workspace.
 - **The one-line installer pipes a remote script into `bash`.** Piping a remote script straight into bash executes unreviewed remote code as you. Prefer download → inspect → run (shown in [references/setup.md](references/setup.md)) unless you already trust the source and channel.
 
 ## When To Use
@@ -84,7 +83,7 @@ docker run -d --name codexbox-api \
   psyb0t/codexbox:latest
 ```
 
-**No auth when `CODEXBOX_API_MODE_TOKEN` is unset.** With it empty the API surface is UNAUTHENTICATED — anyone who can reach `:8080` gets run-execution plus full workspace file read/write/delete access. NEVER expose such an instance on a network or to untrusted agents; always set the token and bind to loopback / behind an authenticating proxy.
+With `CODEXBOX_API_MODE_TOKEN` unset the API surface is unauthenticated — anyone who can reach `:8080` gets run-execution plus full workspace file access. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
 
 | Method | Path | What it does |
 |--------|------|---------------|
@@ -101,7 +100,7 @@ docker run -d --name codexbox-api \
 | `GET` | `/openai/v1/models` | model list from `CODEXBOX_AVAILABLE_MODELS` |
 | `POST` | `/mcp` | MCP server, mounted only when `CODEXBOX_MCP_MODE=1` (see MCP mode) |
 
-**Destructive & irreversible.** `DELETE /files/{path}` removes a workspace file with no undo. An agent must NEVER call it unless the user explicitly asked for that exact deletion; confirm the specific target path first; scope it to the current task; never enumerate-then-bulk-delete. On a workspace shared with other callers/runs this can destroy their data — treat it as admin-only.
+`DELETE /files/{path}` removes a workspace file (no undo). Confirm the target path first and only remove files the current task created — see [Security & safety](#security--safety).
 
 `POST /run` body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`. With `jsonSchema` set, the response adds `json`, `events`, `sessionId`, `usage`, `attempts` — codex has native `--output-schema` enforcement, so `jsonSchema` maps straight onto it (no self-correction retries needed, unlike adapters without native schema support).
 
@@ -157,7 +156,7 @@ Coexists with any foreground mode:
 
 Auth: `CODEXBOX_MCP_MODE_TOKEN=<token>` — bearer in `Authorization: Bearer ...`, or `?apiToken=...` for clients that can't set headers. Empty = no auth. **No fallback to `API_MODE_TOKEN`** — MCP has its own bearer, checked independently.
 
-**No auth when `CODEXBOX_MCP_MODE_TOKEN` is unset.** With it empty the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is UNAUTHENTICATED — anyone who can reach `/mcp` or the sidecar port gets run-execution plus full workspace file read/write/delete access, including the irreversible `delete_file` tool. Setting `CODEXBOX_API_MODE_TOKEN` does NOT protect this surface. NEVER expose such an instance on a network or to untrusted agents; always set the token and bind to loopback / behind an authenticating proxy.
+With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is unauthenticated — anyone who can reach `/mcp` or the sidecar port gets run-execution plus full workspace file access. This surface has its own bearer; setting `CODEXBOX_API_MODE_TOKEN` does not protect it. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
 
 ```bash
 docker run -d --name codexbox-api \
