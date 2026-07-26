@@ -10,6 +10,10 @@
 ARG BASE_IMAGE=psyb0t/aicodebox:v0.14.0
 FROM ${BASE_IMAGE}
 
+# MCP Registry ownership label — identifies this image as the OCI package for
+# the io.github.psyb0t/codexbox server listing.
+LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
+
 USER root
 
 # codex CLI — pinned npm global install.
