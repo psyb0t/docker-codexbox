@@ -1,7 +1,8 @@
 # docker-codexbox
 
+[![version](https://raw.githubusercontent.com/psyb0t/docker-codexbox/badges/version.svg)](https://github.com/psyb0t/docker-codexbox/releases)
+[![license](https://raw.githubusercontent.com/psyb0t/docker-codexbox/badges/license.svg)](LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/psyb0t/codexbox?style=flat-square)](https://hub.docker.com/r/psyb0t/codexbox)
-[![License: WTFPL](https://img.shields.io/badge/License-WTFPL-brightgreen.svg?style=flat-square)](http://www.wtfpl.net/)
 
 [OpenAI Codex CLI](https://github.com/openai/codex) inside an [aicodebox](https://github.com/psyb0t/docker-aicodebox) container. Minimal and toolchain-loaded images, five ways in: interactive shell, one-shot exec, OpenAI-compatible endpoint, MCP server, Telegram bot, and a cron scheduler that fires codex on whatever schedule you want.
 
