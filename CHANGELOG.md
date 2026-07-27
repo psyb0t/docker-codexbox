@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.9 — 2026-07-27
+
+Fixes the `-full` image build. Build only, no runtime behavior change.
+
+- `Dockerfile.full` now removes the NodeSource apt source before the mirror-rotation block runs. That block rewrites only `ubuntu.sources`, but `apt-get update` reads every configured source — and the base image installs Node from NodeSource and leaves that source configured. So all three mirror attempts failed on `deb.nodesource.com`, which began returning `403 Forbidden` to CI runner address ranges, over a repository this image never installs from. No `-full` image published for v0.4.7 or v0.4.8 as a result.
+- Node is already installed in the base image and is unaffected — only the now-purposeless package source is removed, which also reduces what a later `apt-get install` trusts.
+
 ## v0.4.8 — 2026-07-27
 
 README Codex install command fix. Documentation only, no behavior change.

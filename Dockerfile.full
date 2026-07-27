@@ -10,6 +10,16 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive \
     CODEXBOX_IMAGE_VARIANT=full
 
+# The mirror rotation below only rewrites the Ubuntu source, but `apt-get
+# update` reads every configured source. The base image installs Node from
+# NodeSource and leaves that apt source behind, so all three attempts fail on
+# deb.nodesource.com — a host behind a CDN that returns 403 to CI runner
+# address ranges — over a repository this layer never wanted. Node is already
+# installed in the base, so the source has no remaining purpose. Removing it
+# also shrinks what a later `apt-get install` trusts.
+RUN rm -f /etc/apt/sources.list.d/nodesource.sources \
+          /etc/apt/sources.list.d/nodesource.list
+
 RUN set -eux; \
     source_file=/etc/apt/sources.list.d/ubuntu.sources; \
     architecture="$(dpkg --print-architecture)"; \
