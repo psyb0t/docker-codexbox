@@ -1,5 +1,6 @@
 # docker-codexbox
 
+[![CI](https://github.com/psyb0t/docker-codexbox/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/psyb0t/docker-codexbox/actions/workflows/pipeline.yml)
 [![version](https://raw.githubusercontent.com/psyb0t/docker-codexbox/badges/version.svg)](https://github.com/psyb0t/docker-codexbox/releases)
 [![license](https://raw.githubusercontent.com/psyb0t/docker-codexbox/badges/license.svg)](LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/psyb0t/codexbox?style=flat-square)](https://hub.docker.com/r/psyb0t/codexbox)

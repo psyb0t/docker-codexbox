@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.6 — 2026-07-27
+
+README badge. Documentation only, no behavior change.
+
+- Added a GitHub Actions CI status badge to the README.
+
 ## v0.4.5 — 2026-07-27
 
 README badges. Documentation / CI only, no behavior change.
