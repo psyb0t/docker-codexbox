@@ -1,0 +1,28 @@
+{
+  "name": "codexbox",
+  "description": "OpenAI Codex CLI running in a Docker container, put on the network — a REST API, an OpenAI-compatible chat-completions endpoint, an MCP server, a Telegram bot, and a cron scheduler.",
+  "author": { "name": "psyb0t", "url": "https://github.com/psyb0t" },
+  "homepage": "https://github.com/psyb0t/docker-codexbox",
+  "license": "WTFPL",
+  "keywords": ["codex", "openai", "docker", "rest-api", "mcp", "telegram-bot", "cron"],
+  "userConfig": {
+    "url": {
+      "type": "string",
+      "title": "codexbox URL",
+      "description": "Base URL of your running codexbox server, e.g. http://localhost:8080 (same value as the OpenClaw bridge's CODEXBOX_URL).",
+      "required": true
+    },
+    "api_token": {
+      "type": "string",
+      "title": "codexbox API token",
+      "description": "Bearer token for the REST/OpenAI-compatible surface. Only needed if the server was started with CODEXBOX_API_MODE_TOKEN set.",
+      "sensitive": true
+    },
+    "mcp_token": {
+      "type": "string",
+      "title": "codexbox MCP token",
+      "description": "Bearer token for the MCP surface. Only needed if the server was started with CODEXBOX_MCP_MODE_TOKEN set — independent from the API token, no fallback.",
+      "sensitive": true
+    }
+  }
+}

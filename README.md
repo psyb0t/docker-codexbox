@@ -20,6 +20,7 @@ You talk to codexbox. codexbox talks to codex. codex talks to OpenAI — or your
   - [Cron mode](#cron-mode)
 - [Configuration](#configuration)
 - [Auth](#auth)
+- [Agent integrations](#agent-integrations)
 - [Development](#development)
 - [Tests](#tests)
 - [License](#license)
@@ -363,6 +364,43 @@ The canonical `/run` knobs are honored — codex just exposes them differently t
 - `noTools` → drops the shell/exec + web-search tools and runs the sandbox read-only, so the agent answers without acting. (codex keeps `apply_patch`/`update_plan` tool specs that can't be config-removed, but read-only neuters them — the closest codex has to pi/claude `--no-tools`.)
 - `toolsAllowlist` → **not supported**: codex has no name-based built-in tool allowlist (only per-MCP-server `enabled_tools`). It is ignored with a warning.
 - Session: a call with neither `resume` nor `noContinue` continues the workspace's most recent session (`codex exec resume --last`, which starts fresh when there's nothing to resume); `resume` targets a specific session id; `noContinue` runs ephemeral.
+
+## Agent integrations
+
+The [skill](.agents/skills/codexbox) works in any agent that reads `.agents/skills/`, and installs natively in the clients below.
+
+### Claude Code
+
+```bash
+claude plugin marketplace add psyb0t/agents
+claude plugin install codexbox@psyb0t
+```
+
+Claude Code prompts for the codexbox URL and, if the API/MCP tokens are set on the server, the matching bearer tokens — sensitive values are stored in your OS keychain.
+
+### Codex
+
+```bash
+codex plugin marketplace add psyb0t/agents
+```
+
+Codex also picks the skill up automatically in any repo containing `.agents/skills/`, and invokes it as `$codexbox`.
+
+### OpenClaw
+
+The skill is published to ClawHub on every release:
+
+```bash
+openclaw skills install @psyb0t/codexbox
+```
+
+For MCP clients that speak local stdio, the [`@psyb0t/codexbox`](.agents/plugins/codexbox) plugin bridges to a running box's `/mcp` endpoint:
+
+```bash
+openclaw plugins install clawhub:@psyb0t/codexbox
+```
+
+Then set `CODEXBOX_URL` (and `CODEXBOX_MCP_MODE_TOKEN` if the server was started with it set).
 
 ## Development
 

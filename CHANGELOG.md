@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.7 — 2026-07-27
+
+Claude Code and Codex plugin manifests, and a README `Agent integrations` section. No behavior change.
+
+- Added `.agents/.claude-plugin/plugin.json` (`userConfig` for the codexbox URL and the two independent bearer tokens) and `.agents/.codex-plugin/plugin.json` so the existing `.agents/skills/codexbox` skill installs natively via `claude plugin install codexbox@psyb0t` and `codex plugin marketplace add psyb0t/agents`.
+- Added a README `## Agent integrations` section (with Table of Contents entry) documenting the Claude Code, Codex, and OpenClaw install commands, including the existing `@psyb0t/codexbox` MCP-bridge plugin.
+
 ## v0.4.6 — 2026-07-27
 
 README badge. Documentation only, no behavior change.
