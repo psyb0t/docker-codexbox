@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.4.8 — 2026-07-27
+
+README Codex install command fix. Documentation only, no behavior change.
+
+- The Codex subsection of `## Agent integrations` told you to add the marketplace but never told you how to actually install the plugin. Added the missing install line, `codex plugin add codexbox@psyb0t`, right after the marketplace-add command.
+- Corrected the invocation prose: installed via the marketplace, the skill is invoked as `$codexbox:codexbox`; picked up automatically (no install) from this repo's own `.agents/skills/`, it's invoked as plain `$codexbox`.
+
 ## v0.4.7 — 2026-07-27
 
 Claude Code and Codex plugin manifests, and a README `Agent integrations` section. No behavior change.

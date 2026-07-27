@@ -382,9 +382,10 @@ Claude Code prompts for the codexbox URL and, if the API/MCP tokens are set on t
 
 ```bash
 codex plugin marketplace add psyb0t/agents
+codex plugin add codexbox@psyb0t
 ```
 
-Codex also picks the skill up automatically in any repo containing `.agents/skills/`, and invokes it as `$codexbox`.
+Installed via the marketplace, the skill is invoked as `$codexbox:codexbox`. Codex also picks the skill up automatically, with no install, in any repo containing `.agents/skills/` — there it's invoked as plain `$codexbox`.
 
 ### OpenClaw
 
