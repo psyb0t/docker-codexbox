@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.0 — 2026-07-29
+
+Adds local source installation and fixes Codex CLI command routing.
+
+- `codexbox` now forwards every top-level command supported by its pinned Codex CLI, including plugin marketplace management, session lifecycle operations, cloud access, server controls, and the `apply` alias. These commands no longer get mistaken for interactive prompts and routed through `resume --last`.
+- Local checkouts can now run `make install` or `make install-full` to build the selected image and install the wrapper without pulling a published codexbox image. `CODEXBOX_SRC_LOCAL=true` is also available for direct local `install.sh` use and fails if that image has not been built.
+
 ## v0.4.9 — 2026-07-27
 
 Fixes the `-full` image build. Build only, no runtime behavior change.

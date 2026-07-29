@@ -28,7 +28,9 @@ dbg() {
 # flag injected, no interactive-TUI treatment. Critical for the
 # login/logout/login-status subscription-OAuth flow.
 case "${1:-}" in
-    login | logout | mcp | mcp-server | doctor | completion | update | resume | review | apply | sandbox | debug | features | help | -V | --version | -h | --help)
+    login | logout | mcp | mcp-server | app-server | remote-control | completion | update | \
+        doctor | sandbox | debug | plugin | review | apply | a | resume | archive | delete | \
+        unarchive | fork | cloud | exec-server | features | help | -V | --version | -h | --help)
         dbg "passthrough subcommand: ${1}"
         exec "$CODEX_BIN" "$@"
         ;;

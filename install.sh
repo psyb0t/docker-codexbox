@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codexbox installer — pulls the image and installs the `codexbox` wrapper.
+# codexbox installer — selects an image and installs the `codexbox` wrapper.
 #
 # Linear install script (not a dispatcher), so strict mode is on: any step
 # failing should abort rather than limp forward. User-facing progress goes to
@@ -13,6 +13,15 @@ case "${CODEXBOX_FULL:-0}" in
     1) readonly IMAGE="psyb0t/codexbox:latest-full" ;;
     *)
         echo "❌ CODEXBOX_FULL must be 0 or 1" >&2
+        exit 1
+        ;;
+esac
+
+case "${CODEXBOX_SRC_LOCAL:-false}" in
+    true) readonly SOURCE_LOCAL=true ;;
+    false | "") readonly SOURCE_LOCAL=false ;;
+    *)
+        echo "❌ CODEXBOX_SRC_LOCAL must be true or false" >&2
         exit 1
         ;;
 esac
@@ -48,8 +57,16 @@ else
     ssh-keygen -t ed25519 -C "codexbox" -f "$HOME/.ssh/codexbox/id_ed25519" -N ""
 fi
 
-echo "📦 Pulling codexbox image ($IMAGE)..."
-docker pull "$IMAGE"
+if [ "$SOURCE_LOCAL" = "true" ]; then
+    echo "📦 Using local codexbox image ($IMAGE)..."
+    if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+        echo "❌ Local image $IMAGE was not found. Build it first with make build or make build-full." >&2
+        exit 1
+    fi
+else
+    echo "📦 Pulling codexbox image ($IMAGE)..."
+    docker pull "$IMAGE"
+fi
 
 # get wrapper.sh — from same dir if running locally, otherwise download from GitHub
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-/dev/null}")" 2>/dev/null && pwd)"

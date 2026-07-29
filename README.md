@@ -49,6 +49,22 @@ Installing with `CODEXBOX_FULL=1` bakes `latest-full` into the wrapper, so the
 choice persists; you do not need to export it again. `CODEXBOX_FULL` must be
 set for `bash`, not merely for `curl`, hence the `export … &&` form above.
 
+### Local checkout
+
+From a checkout of this repository, build the matching image and install the
+local wrapper without pulling a published codexbox image:
+
+```bash
+make install       # minimal image
+make install-full  # full image
+```
+
+These targets set `CODEXBOX_SRC_LOCAL=true`. To use the installer directly,
+run `CODEXBOX_SRC_LOCAL=true bash ./install.sh` after `make build`, or
+`CODEXBOX_FULL=1 CODEXBOX_SRC_LOCAL=true bash ./install.sh` after `make
+build-full`. It fails if the selected local image is absent instead of falling
+back to `docker pull`.
+
 ## Using the `codexbox` wrapper
 
 The wrapper mounts the current directory as the workspace, persists `~/.codex`
