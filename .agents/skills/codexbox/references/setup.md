@@ -32,11 +32,15 @@ image:
 ```bash
 make install       # minimal image
 make install-full  # full image
+
+# wrapper only — no build or pull; select full when needed
+make install-wrapper
+CODEXBOX_FULL=1 make install-wrapper
 ```
 
 The installer-only `CODEXBOX_SRC_LOCAL=true` flag skips `docker pull` and
-requires the selected local image to already exist. Those targets set it for
-you.
+requires the selected local image to already exist. `make install-wrapper`
+uses that existing image without rebuilding it.
 
 **Verify:** `codexbox --version` should print the codex CLI version.
 

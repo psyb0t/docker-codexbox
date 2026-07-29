@@ -57,13 +57,16 @@ local wrapper without pulling a published codexbox image:
 ```bash
 make install       # minimal image
 make install-full  # full image
+
+# install only the local wrapper; do not build or pull
+make install-wrapper
+CODEXBOX_FULL=1 make install-wrapper  # full image
 ```
 
-These targets set `CODEXBOX_SRC_LOCAL=true`. To use the installer directly,
-run `CODEXBOX_SRC_LOCAL=true bash ./install.sh` after `make build`, or
-`CODEXBOX_FULL=1 CODEXBOX_SRC_LOCAL=true bash ./install.sh` after `make
-build-full`. It fails if the selected local image is absent instead of falling
-back to `docker pull`.
+These targets set `CODEXBOX_SRC_LOCAL=true`. `make install` and `make
+install-full` build their image first; `make install-wrapper` only installs the
+local `wrapper.sh` against the selected existing image. It fails if that image
+is absent instead of falling back to `docker pull`.
 
 ## Using the `codexbox` wrapper
 

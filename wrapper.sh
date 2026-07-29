@@ -167,12 +167,17 @@ if [ -n "$_mode_cron" ]; then
     exit 0
 fi
 
-# Passthrough subcommands — throwaway --rm container. login/logout/mcp need a
+# Management subcommands — throwaway --rm container. login/logout/mcp need a
 # TTY for the interactive OAuth device flow; codex writes auth.json to the
 # mounted ~/.codex so a `codexbox login --device-auth` persists on the host.
+#
+# Keep this list aligned with codexbox-agent.sh. If a Codex subcommand reaches
+# the persistent-container fallback below, it can leave that container busy
+# after completing and block later commands for the same workspace.
 case "${1:-}" in
-    -V | --version | -h | --help | doctor | completion | features | \
-        login | logout | mcp | mcp-server | update)
+    login | logout | mcp | mcp-server | app-server | remote-control | completion | update | \
+        doctor | sandbox | debug | plugin | review | apply | a | resume | archive | delete | \
+        unarchive | fork | cloud | exec-server | features | help | -V | --version | -h | --help)
         docker run --rm "${IT[@]}" "${DOCKER_ARGS[@]}" "$CODEX_IMAGE" "$@"
         exit $?
         ;;

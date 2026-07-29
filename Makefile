@@ -11,7 +11,7 @@ TAG        := v$(VERSION)
 BASE_IMAGE ?= psyb0t/aicodebox:v0.14.0@sha256:543aec8bf85ebc8a0689c4746d4c9e2ede65599decb50827593db0b3c65bd2a5
 CODEX_VERSION ?= 0.144.6
 
-.PHONY: all build build-full build-all install install-full pull-base test test-full-image test-image-select clean help version
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -47,6 +47,9 @@ install: build ## Build the minimal image locally and install the wrapper withou
 
 install-full: build-full ## Build the full image locally and install the wrapper without pulling it
 	CODEXBOX_FULL=1 CODEXBOX_SRC_LOCAL=true bash ./install.sh
+
+install-wrapper: ## Install the wrapper without building or pulling (CODEXBOX_FULL=1 selects full)
+	CODEXBOX_SRC_LOCAL=true bash ./install.sh
 
 build-all: build build-full ## Build both minimal and full variants
 
