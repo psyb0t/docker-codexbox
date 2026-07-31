@@ -4,6 +4,16 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.2 — 2026-07-31
+
+### Fixed
+
+- `collaborators-only.yml` referenced the shared reusable workflow by commit SHA
+  while the rest of the pipeline already tracked `@master`, so that one caller
+  would have kept running a months-old revision after every other job had moved
+  on. All first-party references now track `@master`; third-party actions still
+  pin by full commit SHA.
+
 ## v0.5.1 — 2026-07-29
 
 Fixes host-wrapper command routing and adds a wrapper-only local install path.
