@@ -4,6 +4,23 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.4 — 2026-08-09
+
+Documentation only. No image, wrapper, or entrypoint behaviour changed.
+
+### Added
+
+- `docs/modes/` — one page per mode (`api.md`, `telegram.md`, `cron.md`, `mcp.md`), each carrying that mode's full setup, compose example, and its own environment-variable table. The README's `## Modes` section is now a short summary linking to them.
+
+### Fixed
+
+- The Table of Contents listed API, Telegram and Cron mode but **not MCP mode** — so the one mode a reader is least likely to guess at was also the one missing from navigation. All four are now listed.
+
+### Changed
+
+- Per-mode environment variables lived in two places: the `## Modes` prose and the `## Configuration` tables. They now live once, on each mode's page; `## Configuration` keeps the naming convention, the mode-flag table, and workspace/runtime vars, and links down for the rest. The duplication was a drift source, not a convenience.
+- `.agents/.codex-plugin/plugin.json` was left at `0.4.8` while the tag reached `v0.5.3`. Nothing rewrites this file — the ClawHub workflow only rewrites `.agents/plugins/*/package.json` — so it is bumped by hand and is now back in step with the tag.
+
 ## v0.5.3 — 2026-08-01
 
 Infrastructure only. Nothing in the images or the wrapper changed — every
