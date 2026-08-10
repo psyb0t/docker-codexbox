@@ -16,9 +16,46 @@ LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
 
 USER root
 
-# codex CLI — pinned npm global install.
+# codex CLI — pinned npm global install, into a prefix `aicode` owns.
+#
+# `codex update` (and the TUI's "Update available!" prompt) shells out to
+# `npm install -g @openai/codex`, which renames paths in BOTH the global lib
+# dir and the global bin dir. npm's default prefix is /usr, so that means
+# /usr/lib/node_modules AND /usr/bin — and the runtime user must never own
+# /usr/bin. Installing under ~/.local instead lets the self-update succeed as
+# aicode with no system dir changing hands.
+#
+# ~/.local specifically, because the base entrypoint hardcodes
+# `PATH=/home/aicode/.local/bin:/usr/local/bin:/usr/bin:/bin` and forwards only
+# an allowlist of env vars to the agent — a prefix anywhere else needs a PATH
+# entry that gets dropped before codex ever runs. Nothing bind-mounts over it
+# either (the wrapper mounts .ssh, .codex, and the workspace).
+#
+# The .npmrc is what makes the UPDATE resolve the same prefix: NPM_CONFIG_PREFIX
+# is not on the entrypoint's forward list, and codex refuses to update when
+# `npm root -g` disagrees with its own package root. Per-user npmrc is read
+# regardless of environment, so it survives the privilege drop.
+#
+# Tradeoff: a user-writable executable dir on PATH, so the agent can rewrite the
+# codex binary it later runs. Accepted — aicode already has passwordless sudo
+# here, so it grants no new privilege, and the container is disposable.
+#
+# An update lives only as long as the container — most subcommands run in
+# `docker run --rm` throwaways — so CODEX_VERSION is still what every fresh
+# container starts from. Bump it to make an upgrade stick.
+#
+# The /usr/local/bin symlink is for the init.d scripts: the base entrypoint runs
+# those under `sudo -E -u aicode -H`, and sudo's secure_path does NOT include
+# ~/.local/bin, so `command -v codex` there would come up empty and silently
+# skip the API-key seeding. The link is root-owned and points by path, so an
+# update that replaces the target keeps resolving.
 ARG CODEX_VERSION=0.144.6
-RUN npm install -g --no-audit --no-fund @openai/codex@${CODEX_VERSION}
+ENV PATH="/home/aicode/.local/bin:${PATH}"
+RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
+        @openai/codex@${CODEX_VERSION} \
+    && printf 'prefix=/home/aicode/.local\n' > /home/aicode/.npmrc \
+    && chown -R aicode:aicode /home/aicode/.local /home/aicode/.npmrc \
+    && ln -s /home/aicode/.local/bin/codex /usr/local/bin/codex
 
 # codexbox python package (the CodexAdapter). aicodebox is already in the base
 # image so we install with --no-deps to avoid redundant resolution.

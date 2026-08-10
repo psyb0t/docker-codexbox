@@ -4,6 +4,28 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.5 — 2026-08-10
+
+Makes codex's own updater work inside the container. No wrapper, entrypoint, or
+mode behaviour changed.
+
+### Fixed
+
+- `codex update` — and accepting the TUI's "Update available!" prompt — failed with `EACCES`. codex was installed into npm's default global prefix, which is `/usr` here, so the package landed in `/usr/lib/node_modules` with its launcher at `/usr/bin/codex`, both owned by root. The container runs as the unprivileged `aicode` user, and codex's updater shells out to `npm install -g @openai/codex`, which renames paths in *both* the global lib dir and the global bin dir. It is now installed under `/home/aicode/.local`, which `aicode` owns, so the update succeeds without any system directory being writable by the runtime user.
+- `/home/aicode/.npmrc` pins that same prefix. The update runs after the entrypoint has dropped privileges, and only an allowlist of environment variables survives that drop, so `NPM_CONFIG_PREFIX` cannot carry the setting. codex refuses to update when `npm root -g` disagrees with its own package root, and a per-user `.npmrc` is read regardless of environment.
+- A `/usr/local/bin/codex` symlink keeps the first-run scripts in `codexbox/init.d/` working. Those run under `sudo`, whose `secure_path` does not include `~/.local/bin`, so their `command -v codex` check would have come up empty and silently skipped seeding `auth.json` from `OPENAI_API_KEY`.
+- `codexbox/pyproject.toml` was left at `0.3.5` while the tag reached `v0.5.4`. The `Makefile` derives `VERSION` from it, so `make version` printed `v0.3.5` and a local `make build` tagged its image on top of the genuine v0.3.5 release. It is now in step with the tag.
+
+### Changed
+
+- `.agents/.codex-plugin/plugin.json` bumped by hand, as before — the ClawHub workflow only rewrites `.agents/plugins/*/package.json`.
+- `THIRD_PARTY.md` records the `--prefix` the codex package is now installed with.
+
+Note that an update applied this way lives only as long as the container that
+ran it: `codexbox exec` and the management subcommands each run in a throwaway
+container, and `CODEX_VERSION` in the `Dockerfile` is still what every fresh
+container starts from. Bump it and rebuild to move the pinned version.
+
 ## v0.5.4 — 2026-08-09
 
 Documentation only. No image, wrapper, or entrypoint behaviour changed.
