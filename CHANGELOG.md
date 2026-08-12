@@ -4,6 +4,17 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.6 — 2026-08-12
+
+Fixes the full-image release build inheriting a stale minimal image.
+
+### Fixed
+
+- `Dockerfile.full` now defaults to `psyb0t/codexbox:latest`. The staged image
+  workflow publishes the minimal image before building the full variant, so the
+  full image now inherits the current minimal release instead of the obsolete
+  `v0.2.0` base.
+
 ## v0.5.5 — 2026-08-10
 
 Makes codex's own updater work inside the container. No wrapper, entrypoint, or

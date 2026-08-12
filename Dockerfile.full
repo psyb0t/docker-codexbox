@@ -2,7 +2,7 @@
 #
 # This layers on the minimal image so both variants share the same Codex CLI,
 # adapter, entrypoint, and authentication behavior.
-ARG BASE_IMAGE=psyb0t/codexbox:v0.2.0@sha256:17412ed4154b5406696ca9d65e30fe71c5c296e17ec96133f6ffb9c8c3ff08e9
+ARG BASE_IMAGE=psyb0t/codexbox:latest
 FROM ${BASE_IMAGE}
 
 USER root
