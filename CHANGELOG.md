@@ -4,6 +4,25 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.8 — 2026-08-13
+
+Rebuilds on the current aicodebox base and adds a single-command version bump.
+
+### Changed
+
+- Base image bumped to `psyb0t/aicodebox:v0.14.5`, which fixes the API-mode
+  container restart-looping while an agent request runs (the agent subprocess
+  is now spawned in its own session/process group, so a signal it or a tool it
+  spawned delivers no longer reaches the uvicorn PID 1). No codexbox behaviour
+  changes; the restart-loop fix is inherited from the base.
+
+### Added
+
+- `make version V=X.Y.Z` sets the version in every place it lives
+  (`codexbox/pyproject.toml`, `codexbox/uv.lock`, `.agents/.codex-plugin/plugin.json`),
+  commits, and tags — so a release no longer relies on remembering each file.
+  `make version` with no argument prints the current version as before.
+
 ## v0.5.7 — 2026-08-13
 
 Keeps programmatic workspace continuation on the resumable Codex root session

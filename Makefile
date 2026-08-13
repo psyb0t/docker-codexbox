@@ -1,4 +1,5 @@
 IMAGE_NAME := psyb0t/codexbox
+PKG        := codexbox
 # Single-source version derivation: codexbox/pyproject.toml [project]
 # version is THE source. awk reads it on the host (no Python dep
 # needed just to read the version). __init__.py reads the same value
@@ -8,15 +9,30 @@ VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyp
 TAG        := v$(VERSION)
 # Published base image pinned to its immutable multi-architecture manifest.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:v0.14.0@sha256:543aec8bf85ebc8a0689c4746d4c9e2ede65599decb50827593db0b3c65bd2a5
+BASE_IMAGE ?= psyb0t/aicodebox:v0.14.5@sha256:35bc16078a5561669564a15277c1931b47cc46c4c0b392c14fbe52c363df9395
 CODEX_VERSION ?= 0.144.6
 
 .PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version
 
 all: build ## Build the codexbox image on top of the published base
 
-version: ## Print the version that would be tagged
+version: ## Print version, or set-everywhere+commit+tag: make version V=X.Y.Z
+ifeq ($(strip $(V)),)
 	@echo $(TAG)
+else
+	@echo "$(V)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.]+)?$$' || { echo "V must be semver (X.Y.Z), got '$(V)'" >&2; exit 1; }
+	@set -e; old="$(VERSION)"; \
+	( cd $(PKG) && uv version "$(V)" >/dev/null ); \
+	tmp=$$(mktemp); jq --arg v "$(V)" '.version=$$v' .agents/.codex-plugin/plugin.json >"$$tmp" && mv "$$tmp" .agents/.codex-plugin/plugin.json; \
+	git add $(PKG)/pyproject.toml $(PKG)/uv.lock .agents/.codex-plugin/plugin.json; \
+	git commit -q -m "v$(V)"; \
+	git tag -a "v$(V)" -m "$(PKG) v$(V)"; \
+	echo "[make version] v$$old -> v$(V): bumped pyproject+uv.lock+codex-manifest, committed, tagged"; \
+	if git --no-pager grep -In -e "$$old" -- ':!CHANGELOG.md' ':!uv.lock' ':!*server.json' ':!*package.json' >/dev/null 2>&1; then \
+		echo "⚠ v$$old still appears in tracked files make version does not manage — check for a missed version location:" >&2; \
+		git --no-pager grep -In -e "$$old" -- ':!CHANGELOG.md' ':!uv.lock' ':!*server.json' ':!*package.json' >&2; \
+	fi
+endif
 
 pull-base: ## Pull the published aicodebox base image (SKIP_BASE_PULL=1 to use a locally-built base)
 	@if [ "$${SKIP_BASE_PULL:-0}" = "1" ]; then \
