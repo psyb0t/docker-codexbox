@@ -43,20 +43,20 @@ All `/files/*` paths are resolved against the workspace root with traversal chec
 ```bash
 # upload a file
 curl -sS -X PUT \
-  -H "Authorization: Bearer your-secret" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   --data-binary @local.txt \
   http://localhost:8080/files/notes/hello.txt
 
 # download it back
-curl -sS -H "Authorization: Bearer your-secret" \
+curl -sS --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes/hello.txt
 
 # list the dir
-curl -sS -H "Authorization: Bearer your-secret" \
+curl -sS --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes | jq
 
 # delete it
-curl -sS -X DELETE -H "Authorization: Bearer your-secret" \
+curl -sS -X DELETE --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes/hello.txt
 ```
 
@@ -64,9 +64,17 @@ curl -sS -X DELETE -H "Authorization: Bearer your-secret" \
 
 **`POST /run`** body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`. With `jsonSchema` set the response includes `text`, `json`, `events`, `sessionId`, `usage`, `attempts`; without it the response is `{runId, workspace, exitCode, text}`.
 
+By default, Codexbox pins the first top-level Codex `exec` session created for
+each canonical workspace and resumes that exact root ID on later calls. This
+keeps continuity stable when a run spawns subagents, whose rollout files may be
+newer but cannot accept direct user turns. Existing workspaces automatically
+migrate their newest top-level `exec` rollout. An explicit `resume` replaces
+the workspace pin after Codex confirms the thread; `noContinue` is ephemeral
+and leaves the pin unchanged.
+
 ```bash
 curl -s http://localhost:8080/run \
-  -H "Authorization: Bearer your-secret" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "say HELLO", "workspace": "/workspace"}'
 ```

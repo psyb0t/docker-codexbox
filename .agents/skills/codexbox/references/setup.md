@@ -79,7 +79,7 @@ docker run -d --name codexbox \
 | `OPENAI_BASE_URL` | — | Point codex at an OpenAI-compatible endpoint instead of the default API |
 | `CODEXBOX_IMAGE` | installed image | Override the image the wrapper runs |
 | `CODEXBOX_FULL` | installed choice (`0` initially) | `0` forces minimal, `1` forces full |
-| `CODEXBOX_DATA_DIR` | `~/.codex` | Host dir mounted as `CODEX_HOME` (auth + config + sessions) |
+| `CODEXBOX_DATA_DIR` | `~/.codex` | Host dir mounted as `CODEX_HOME` (auth + config + sessions + per-workspace root-session pins) |
 | `CODEXBOX_SSH_DIR` | `~/.ssh/codexbox` | SSH key dir mounted into the container |
 | `CODEXBOX_MAX_MEM` | `10g` | Per-container memory limit |
 | `CODEXBOX_CONTAINER_NAME` | derived from `$PWD` | Override the per-workspace container name |

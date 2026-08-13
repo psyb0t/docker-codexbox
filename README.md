@@ -288,7 +288,12 @@ The canonical `/run` knobs are honored — codex just exposes them differently t
 - `appendSystemPrompt` → appends a developer-role message (`-c developer_instructions=…`).
 - `noTools` → drops the shell/exec + web-search tools and runs the sandbox read-only, so the agent answers without acting. (codex keeps `apply_patch`/`update_plan` tool specs that can't be config-removed, but read-only neuters them — the closest codex has to pi/claude `--no-tools`.)
 - `toolsAllowlist` → **not supported**: codex has no name-based built-in tool allowlist (only per-MCP-server `enabled_tools`). It is ignored with a warning.
-- Session: a call with neither `resume` nor `noContinue` continues the workspace's most recent session (`codex exec resume --last`, which starts fresh when there's nothing to resume); `resume` targets a specific session id; `noContinue` runs ephemeral.
+- Session: a call with neither `resume` nor `noContinue` continues the top-level
+  Codex `exec` session pinned to that canonical workspace. The first call starts
+  a persistent root session; later calls resume its exact ID, so a newer
+  subagent rollout cannot steal continuation. Existing workspaces migrate their
+  newest top-level `exec` rollout automatically. `resume` targets and re-pins a
+  specific session ID; `noContinue` runs ephemerally without changing the pin.
 
 ## Agent integrations
 

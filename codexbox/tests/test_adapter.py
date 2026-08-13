@@ -17,6 +17,7 @@ no real codex binary. Covers:
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,11 @@ from codexbox.adapter import (
 
 
 @pytest.fixture
-def adapter() -> CodexAdapter:
+def adapter(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> CodexAdapter:
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / ".codex"))
     return CodexAdapter()
 
 
@@ -100,11 +105,145 @@ def test_build_argv_resume_no_ephemeral(adapter: CodexAdapter) -> None:
     assert "--ephemeral" not in argv
 
 
-def test_build_argv_default_continues_via_resume_last(adapter: CodexAdapter) -> None:
-    argv = adapter.build_argv(RunRequest(prompt="hi"))
+def test_build_argv_default_starts_persistent_root(adapter: CodexAdapter) -> None:
+    argv = adapter.build_argv(RunRequest(prompt="hi", workspace="/workspace"))
+    assert "resume" not in argv
+    assert "--ephemeral" not in argv
+
+
+def test_parse_output_records_root_for_exact_continuation(adapter: CodexAdapter) -> None:
+    request = RunRequest(prompt="hi", workspace="/workspace")
+    adapter.parse_output(_jsonl_fixture(), request)
+
+    argv = adapter.build_argv(request)
     exec_idx = argv.index("exec")
-    assert argv[exec_idx + 1] == "resume"
-    assert argv[exec_idx + 2] == "--last"
+    assert argv[exec_idx + 1 : exec_idx + 3] == [
+        "resume",
+        "019f83b2-thread-abc",
+    ]
+    assert "--last" not in argv
+
+
+def test_continuations_are_isolated_by_workspace(adapter: CodexAdapter) -> None:
+    adapter.parse_output(
+        _jsonl_fixture(),
+        RunRequest(workspace="/workspace/one"),
+    )
+
+    first_argv = adapter.build_argv(RunRequest(workspace="/workspace/one"))
+    second_argv = adapter.build_argv(RunRequest(workspace="/workspace/two"))
+    assert "019f83b2-thread-abc" in first_argv
+    assert "resume" not in second_argv
+
+
+def test_explicit_resume_becomes_workspace_continuation(adapter: CodexAdapter) -> None:
+    workspace = "/workspace"
+    explicit_request = RunRequest(workspace=workspace, resume="requested-root")
+    stdout = json.dumps({"type": "thread.started", "thread_id": "requested-root"})
+
+    adapter.parse_output(stdout, explicit_request)
+
+    argv = adapter.build_argv(RunRequest(workspace=workspace))
+    assert argv[argv.index("resume") + 1] == "requested-root"
+
+
+def test_no_continue_does_not_replace_workspace_continuation(adapter: CodexAdapter) -> None:
+    workspace = "/workspace"
+    adapter.parse_output(_jsonl_fixture(), RunRequest(workspace=workspace))
+    ephemeral_stdout = json.dumps(
+        {"type": "thread.started", "thread_id": "ephemeral-thread"},
+    )
+
+    adapter.parse_output(
+        ephemeral_stdout,
+        RunRequest(workspace=workspace, no_continue=True),
+    )
+
+    argv = adapter.build_argv(RunRequest(workspace=workspace))
+    assert argv[argv.index("resume") + 1] == "019f83b2-thread-abc"
+
+
+def test_existing_root_migration_ignores_newer_subagent(
+    adapter: CodexAdapter,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    codex_home = tmp_path / ".codex"
+    sessions_dir = codex_home / "sessions" / "2026" / "08" / "13"
+    sessions_dir.mkdir(parents=True)
+    older_root_path = sessions_dir / "rollout-older-root.jsonl"
+    root_path = sessions_dir / "rollout-root.jsonl"
+    subagent_path = sessions_dir / "rollout-subagent.jsonl"
+    older_root_path.write_text(
+        json.dumps(
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": "older-root-session",
+                    "cwd": "/workspace",
+                    "source": "exec",
+                    "thread_source": "user",
+                },
+            },
+        )
+        + "\n",
+    )
+    root_path.write_text(
+        json.dumps(
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": "root-session",
+                    "cwd": "/workspace",
+                    "source": "exec",
+                    "thread_source": "user",
+                },
+            },
+        )
+        + "\n",
+    )
+    subagent_path.write_text(
+        json.dumps(
+            {
+                "type": "session_meta",
+                "payload": {
+                    "id": "newer-subagent",
+                    "cwd": "/workspace",
+                    "source": {"subagent": {}},
+                    "thread_source": "subagent",
+                    "parent_thread_id": "root-session",
+                },
+            },
+        )
+        + "\n",
+    )
+    os.utime(older_root_path, ns=(1, 1))
+    os.utime(root_path, ns=(2, 2))
+    os.utime(subagent_path, ns=(3, 3))
+
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    argv = adapter.build_argv(RunRequest(workspace="/workspace"))
+
+    assert argv[argv.index("resume") + 1] == "root-session"
+    assert "older-root-session" not in argv
+    assert "newer-subagent" not in argv
+    assert "--last" not in argv
+
+
+def test_malformed_continuation_state_starts_fresh(
+    adapter: CodexAdapter,
+    tmp_path: Path,
+) -> None:
+    request = RunRequest(workspace="/workspace")
+    adapter.parse_output(_jsonl_fixture(), request)
+    state_dir = tmp_path / ".codex" / "sessions" / ".codexbox-roots"
+    state_files = list(state_dir.glob("*.json"))
+    assert len(state_files) == 1
+    state_files[0].write_text("not-json")
+
+    argv = adapter.build_argv(request)
+
+    assert "resume" not in argv
     assert "--ephemeral" not in argv
 
 
@@ -217,9 +356,7 @@ def _jsonl_fixture() -> str:
             },
         },
     ]
-    return "\n".join(
-        e if isinstance(e, str) else json.dumps(e) for e in events
-    )
+    return "\n".join(e if isinstance(e, str) else json.dumps(e) for e in events)
 
 
 def test_parse_output_assembles_text(adapter: CodexAdapter) -> None:
@@ -283,6 +420,18 @@ def test_parse_stream_event_session(adapter: CodexAdapter) -> None:
     assert evt is not None
     assert evt.type == "session"
     assert evt.data == {"id": "019f83b2-abc"}
+
+
+def test_parse_stream_event_records_root_for_exact_continuation(
+    adapter: CodexAdapter,
+) -> None:
+    request = RunRequest(workspace="/workspace")
+    line = json.dumps({"type": "thread.started", "thread_id": "stream-root"})
+
+    adapter.parse_stream_event(line, request)
+
+    argv = adapter.build_argv(request)
+    assert argv[argv.index("resume") + 1] == "stream-root"
 
 
 def test_parse_stream_event_delta(adapter: CodexAdapter) -> None:

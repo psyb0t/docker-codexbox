@@ -33,6 +33,12 @@ services:
 
 The schedule field is 6-field (seconds first), so `"0 0 9 * * 1-5"` is 09:00:00 on weekdays.
 
+Each job workspace keeps one top-level Codex `exec` session across ticks.
+Codexbox records that root's exact ID and resumes it directly instead of using
+Codex's unfiltered `resume --last`, which can select a newer subagent rollout
+that cannot accept a cron turn. Existing job workspaces migrate their newest
+top-level `exec` rollout automatically; no cron configuration change is needed.
+
 ## Run history
 
 Each run gets a history dir at `$HOME/.aicodebox/cron/history/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt`. If telegram is configured, `telegram.json` lands there too and the next run's prompt gets a "prior run" hint so codex can reference its own history without you wiring it up.

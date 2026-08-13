@@ -104,9 +104,16 @@ With `CODEXBOX_API_MODE_TOKEN` unset the API surface is unauthenticated — anyo
 
 `POST /run` body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`. With `jsonSchema` set, the response adds `json`, `events`, `sessionId`, `usage`, `attempts` — codex has native `--output-schema` enforcement, so `jsonSchema` maps straight onto it (no self-correction retries needed, unlike adapters without native schema support).
 
+Default programmatic runs continue the exact top-level Codex `exec` root
+pinned to the canonical workspace. The first run creates the pin; existing
+workspaces migrate their newest top-level `exec` rollout. Newer subagent
+rollouts are deliberately excluded because Codex rejects direct turns on
+multi-agent children. Explicit `resume` re-pins the confirmed thread;
+`noContinue` is ephemeral and leaves the workspace pin unchanged.
+
 ```bash
 curl -s http://localhost:8080/run \
-  -H "Authorization: Bearer your-secret" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "say HELLO", "workspace": "/workspace"}'
 ```
@@ -116,10 +123,10 @@ Async: set `"async": true`, poll `GET /run/result?runId=<id>` until `status != "
 All `/files/*` paths are resolved against the workspace root with traversal checking — `..` segments that escape the root return 400.
 
 ```bash
-curl -sS -X PUT -H "Authorization: Bearer your-secret" \
+curl -sS -X PUT --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   --data-binary @local.txt http://localhost:8080/files/notes/hello.txt
 
-curl -sS -H "Authorization: Bearer your-secret" \
+curl -sS --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes/hello.txt
 ```
 
@@ -134,7 +141,7 @@ curl -sS -H "Authorization: Bearer your-secret" \
 
 ```bash
 curl -s http://localhost:8080/openai/v1/chat/completions \
-  -H "Authorization: Bearer your-secret" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "model": "gpt-5.1-codex",

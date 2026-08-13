@@ -15,10 +15,12 @@ for the full ground-truth map):
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
 import tempfile
+from pathlib import Path
 from typing import Any, ClassVar
 
 from aicodebox.adapters.base import (
@@ -51,6 +53,8 @@ CONFIG_DEVELOPER_INSTRUCTIONS = "developer_instructions"
 # tool's effect. Closest thing codex has to pi/claude --no-tools.
 CONFIG_SHELL_TOOL_OFF = "features.shell_tool=false"
 CONFIG_WEB_SEARCH_OFF = "web_search=disabled"
+CONTINUATION_STATE_DIR = ".codexbox-roots"
+ROLLOUT_GLOB = "rollout-*.jsonl"
 
 
 def _truncate(value: Any, limit: int = 80) -> str:
@@ -64,6 +68,153 @@ def _truncate(value: Any, limit: int = 80) -> str:
         return ""
     s = str(value)
     return s if len(s) <= limit else s[:limit] + "..."
+
+
+def _codex_home() -> Path:
+    configured = os.environ.get("CODEX_HOME")
+    if configured:
+        return Path(configured)
+    return Path(os.environ.get("HOME", "/home/aicode")) / ".codex"
+
+
+def _canonical_workspace(workspace: str) -> str:
+    return str(Path(workspace).resolve())
+
+
+def _continuation_path(workspace: str) -> Path:
+    canonical = _canonical_workspace(workspace)
+    workspace_key = hashlib.sha256(canonical.encode()).hexdigest()
+    return _codex_home() / "sessions" / CONTINUATION_STATE_DIR / f"{workspace_key}.json"
+
+
+def _rollout_root_session(path: Path, workspace: str) -> str | None:
+    try:
+        with path.open(encoding="utf-8", errors="replace") as rollout:
+            first_line = rollout.readline()
+        payload = json.loads(first_line).get("payload", {})
+    except (OSError, json.JSONDecodeError, AttributeError) as exc:
+        log.debug(
+            "rollout metadata ignored (path=%s err=%s)",
+            _truncate(path),
+            _truncate(exc),
+        )
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("source") != "exec":
+        return None
+    if payload.get("thread_source") not in (None, "user"):
+        return None
+    if payload.get("parent_thread_id"):
+        return None
+
+    cwd = payload.get("cwd")
+    session_id = payload.get("id")
+    if not isinstance(cwd, str) or not isinstance(session_id, str):
+        return None
+    if _canonical_workspace(cwd) != _canonical_workspace(workspace):
+        return None
+    return session_id
+
+
+def _latest_rollout_root(workspace: str) -> str | None:
+    sessions_dir = _codex_home() / "sessions"
+    if not sessions_dir.is_dir():
+        return None
+
+    candidates: list[tuple[int, str]] = []
+    for path in sessions_dir.rglob(ROLLOUT_GLOB):
+        session_id = _rollout_root_session(path, workspace)
+        if not session_id:
+            continue
+        try:
+            modified_at = path.stat().st_mtime_ns
+        except OSError as exc:
+            log.debug(
+                "rollout timestamp unavailable (path=%s err=%s)",
+                _truncate(path),
+                _truncate(exc),
+            )
+            continue
+        candidates.append((modified_at, session_id))
+
+    if not candidates:
+        return None
+    return max(candidates)[1]
+
+
+def _write_continuation(workspace: str, session_id: str) -> None:
+    state_path = _continuation_path(workspace)
+    state_dir = state_path.parent
+    temp_path: Path | None = None
+    try:
+        state_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd, raw_temp_path = tempfile.mkstemp(prefix="continuation-", dir=state_dir)
+        temp_path = Path(raw_temp_path)
+        with os.fdopen(fd, "w", encoding="utf-8") as state_file:
+            json.dump(
+                {
+                    "workspace": _canonical_workspace(workspace),
+                    "session_id": session_id,
+                },
+                state_file,
+            )
+            state_file.write("\n")
+        os.replace(temp_path, state_path)
+        temp_path = None
+    except OSError as exc:
+        log.warning(
+            "continuation state write failed (workspace=%s err=%s)",
+            _truncate(workspace),
+            _truncate(exc),
+        )
+    finally:
+        if temp_path is not None:
+            try:
+                temp_path.unlink(missing_ok=True)
+            except OSError as exc:
+                log.warning(
+                    "continuation temp cleanup failed (path=%s err=%s)",
+                    _truncate(temp_path),
+                    _truncate(exc),
+                )
+
+
+def _read_continuation(workspace: str) -> str | None:
+    state_path = _continuation_path(workspace)
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        state = None
+    except (OSError, json.JSONDecodeError) as exc:
+        log.warning(
+            "continuation state unreadable (workspace=%s err=%s)",
+            _truncate(workspace),
+            _truncate(exc),
+        )
+        state = None
+
+    if isinstance(state, dict):
+        session_id = state.get("session_id")
+        state_workspace = state.get("workspace")
+        if (
+            isinstance(session_id, str)
+            and session_id
+            and state_workspace == _canonical_workspace(workspace)
+        ):
+            return session_id
+
+    migrated_session_id = _latest_rollout_root(workspace)
+    if migrated_session_id:
+        _write_continuation(workspace, migrated_session_id)
+    return migrated_session_id
+
+
+def _remember_continuation(req: RunRequest, session_id: str) -> None:
+    if req.no_continue or not req.workspace or not session_id:
+        return
+    _write_continuation(req.workspace, session_id)
 
 
 class CodexAdapter(AgentAdapter):
@@ -111,11 +262,6 @@ class CodexAdapter(AgentAdapter):
     def build_argv(self, req: RunRequest) -> list[str]:
         argv: list[str] = [self.binary, "exec"]
 
-        # Session: default to continuing the workspace's most recent session
-        # (pi's --continue / claude's --continue). codex `resume --last` starts
-        # a FRESH session — not an error — when nothing is recorded yet, so it's
-        # safe on a clean workspace. resume=<id> targets a specific session;
-        # no_continue runs ephemerally with nothing persisted.
         session_choice: str
         if req.resume:
             argv += ["resume", req.resume]
@@ -123,8 +269,12 @@ class CodexAdapter(AgentAdapter):
         elif req.no_continue:
             session_choice = "ephemeral"
         else:
-            argv += ["resume", "--last"]
-            session_choice = "continue"
+            continuation_id = _read_continuation(req.workspace) if req.workspace else None
+            if continuation_id:
+                argv += ["resume", continuation_id]
+                session_choice = "continue"
+            else:
+                session_choice = "new"
 
         argv += ["--json", "--skip-git-repo-check"]
 
@@ -171,7 +321,8 @@ class CodexAdapter(AgentAdapter):
             # schema to a temp file. Leaking this temp file in an ephemeral
             # container is acceptable (documented in the project plan).
             fd, schema_path = tempfile.mkstemp(
-                suffix=".json", prefix="codex-schema-",
+                suffix=".json",
+                prefix="codex-schema-",
             )
             os.write(fd, json.dumps(req.json_schema).encode("utf-8"))
             os.close(fd)
@@ -212,7 +363,6 @@ class CodexAdapter(AgentAdapter):
         alongside the JSONL events — non-JSON lines are EXPECTED and must be
         skipped (counted + warned), never treated as fatal.
         """
-        del req
         line_count = 0
         decoded_count = 0
         decode_errors = 0
@@ -247,6 +397,7 @@ class CodexAdapter(AgentAdapter):
                 tid = evt.get("thread_id")
                 if isinstance(tid, str) and not session_id:
                     session_id = tid
+                    _remember_continuation(req, tid)
                 continue
 
             if etype == "item.completed":
@@ -314,7 +465,9 @@ class CodexAdapter(AgentAdapter):
         )
 
     def parse_events(
-        self, stdout: str, req: RunRequest,
+        self,
+        stdout: str,
+        req: RunRequest,
     ) -> list[dict[str, Any]]:
         """JSON-decode every line of codex's ``--json`` ThreadEvent stream.
 
@@ -359,7 +512,9 @@ class CodexAdapter(AgentAdapter):
         return events
 
     def parse_stream_event(
-        self, line: str, req: RunRequest,
+        self,
+        line: str,
+        req: RunRequest,
     ) -> StreamEvent | None:
         """Decode one line of codex's ``--json`` ThreadEvent stream into a
         canonical ``StreamEvent``.
@@ -370,7 +525,6 @@ class CodexAdapter(AgentAdapter):
         lines (codex interleaves plain-text ``ERROR ...`` log lines) are
         dropped, not surfaced as stream errors.
         """
-        del req
         if not line:
             return None
         try:
@@ -390,6 +544,7 @@ class CodexAdapter(AgentAdapter):
         if etype == "thread.started":
             tid = evt.get("thread_id")
             if isinstance(tid, str) and tid:
+                _remember_continuation(req, tid)
                 return StreamEvent(type="session", data={"id": tid})
             return None
 

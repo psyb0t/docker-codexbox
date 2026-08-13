@@ -4,6 +4,37 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.7 — 2026-08-13
+
+Keeps programmatic workspace continuation on the resumable Codex root session
+when multi-agent runs create newer child rollouts.
+
+### Fixed
+
+- API, MCP, Telegram, and cron runs no longer delegate default continuation to
+  `codex exec resume --last`. Codex includes subagent rollouts in that lookup,
+  even though multi-agent children reject direct user turns, so completion
+  timing could permanently strand a scheduled workspace on an unresumable
+  child.
+- Codexbox now atomically records the confirmed top-level `exec` thread for
+  each canonical workspace and resumes its exact ID. First runs remain
+  persistent, explicit `resume` re-pins the workspace, and `noContinue`
+  remains ephemeral without disturbing continuity.
+- Existing workspaces migrate automatically by selecting their newest
+  top-level `exec` rollout while excluding subagents. The continuation records
+  live under Codex's existing `sessions/` tree, so `codexbox clear-session`
+  removes them with the rollouts.
+
+### Changed
+
+- `.agents/.codex-plugin/plugin.json` is bumped to `0.5.7`. The source
+  manifests under `.agents/plugins/` remain `0.0.0` because the tag-publish
+  workflow stamps their release version.
+- `codexbox/uv.lock` now carries the canonical `0.5.7` package version instead
+  of its stale `0.3.5` local-project entry.
+- Secret scanning now excludes only ignored local state by path. It no longer
+  waives credential-shaped values in tracked documentation or tests.
+
 ## v0.5.6 — 2026-08-12
 
 Fixes the full-image release build inheriting a stale minimal image.
