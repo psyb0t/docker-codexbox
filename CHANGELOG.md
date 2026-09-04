@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.9, 2026-09-04
+
+- Bumped the digest-pinned base image to `psyb0t/aicodebox:v0.14.6`, which adds independent event retention through `eventMode` and the stable full-event envelope to `POST /run`.
+- Documented how `eventMode: "full"` preserves native Codex reasoning, command execution, file changes, MCP activity, web activity, todo updates, and usage records.
+- Corrected the documented mappings for system prompts and tool disabling. Added an adapter regression test that proves reasoning and tool items survive event parsing unchanged.
+- Added `make pkg-lock` and refreshed the lockfile against aicodebox v0.14.6.
+
 ## v0.5.8 — 2026-08-13
 
 Rebuilds on the current aicodebox base and adds a single-command version bump.

@@ -62,7 +62,13 @@ curl -sS -X DELETE --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
 
 ## Running a prompt
 
-**`POST /run`** body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`. With `jsonSchema` set the response includes `text`, `json`, `events`, `sessionId`, `usage`, `attempts`; without it the response is `{runId, workspace, exitCode, text}`.
+**`POST /run`** body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `eventMode`, `outputFormat`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`.
+
+Set `"eventMode": "full"` to return every Codex `exec --json` record. The response wraps each native record as `{sequence, attempt, backend, eventType, event}`. The nested `event` is untouched, so reasoning items, command execution updates, file changes, MCP activity, web activity, todo updates, and turn usage are not collapsed or discarded. `"eventMode": "none"` returns only the final result. The default `"auto"` preserves legacy schema behavior by enabling events for `jsonSchema` requests; `"outputFormat": "json-verbose"` is the compatibility alias for that automatic full-event mode.
+
+`"outputFormat": "text"` and `"outputFormat": "json"` remain accepted legacy inputs but do not change the `/run` response serialization. New callers should use `eventMode`; only `json-verbose` has a compatibility effect while `eventMode` is `auto`.
+
+`jsonSchema` controls only Codex native structured output and can be combined with either event mode.
 
 By default, Codexbox pins the first top-level Codex `exec` session created for
 each canonical workspace and resumes that exact root ID on later calls. This
@@ -79,9 +85,9 @@ curl -s http://localhost:8080/run \
   -d '{"prompt": "say HELLO", "workspace": "/workspace"}'
 ```
 
-> Codex has **native JSON-schema enforcement** (`--output-schema`) — of the adapters on the aicodebox base, codex is the only one that doesn't need self-correction retries to get schema-conforming output; `jsonSchema` maps straight onto codex's own structured-output flag.
+> Codex uses native JSON Schema enforcement through `--output-schema`. `jsonSchema` maps to that flag first. The shared validator and retry path remain a fallback if the returned text still fails validation.
 
-`appendSystemPrompt` and `systemPrompt` have no direct codex equivalent — codex has no `--append-system-prompt` flag; system-prompt injection there is via `AGENTS.md` in the workspace or `-c instructions=...`, not a per-request field. `noTools` / `toolsAllowlist` are accepted for API compatibility with the other adapters but codex has no per-tool allowlist or "disable internal tools" switch, so they're logged and ignored.
+`systemPrompt` maps to `-c instructions=...`, which replaces Codex's built-in instructions. `appendSystemPrompt` maps to `-c developer_instructions=...`. `noTools` disables shell and hosted web search, then selects a read-only sandbox. Codex still exposes its fixed planning and patch surfaces. `toolsAllowlist` has no built-in name-based Codex mapping, so it is logged and ignored. Use `noTools` or an MCP server's `enabled_tools` setting instead.
 
 ## API mode environment variables
 

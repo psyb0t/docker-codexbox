@@ -9,10 +9,10 @@ VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyp
 TAG        := v$(VERSION)
 # Published base image pinned to its immutable multi-architecture manifest.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:v0.14.5@sha256:35bc16078a5561669564a15277c1931b47cc46c4c0b392c14fbe52c363df9395
+BASE_IMAGE ?= psyb0t/aicodebox:v0.14.6@sha256:0895ce88281fd1c307fdbbca5cec86989a252a1ca314713d74eec521c7651853
 CODEX_VERSION ?= 0.144.6
 
-.PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version pkg-lock
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -33,6 +33,9 @@ else
 		git --no-pager grep -In -e "$$old" -- ':!CHANGELOG.md' ':!uv.lock' ':!*server.json' ':!*package.json' >&2; \
 	fi
 endif
+
+pkg-lock: ## Refresh the Python lockfile under the current dependency pins
+	cd codexbox && uv lock
 
 pull-base: ## Pull the published aicodebox base image (SKIP_BASE_PULL=1 to use a locally-built base)
 	@if [ "$${SKIP_BASE_PULL:-0}" = "1" ]; then \

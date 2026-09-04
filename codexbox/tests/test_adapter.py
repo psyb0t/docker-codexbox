@@ -411,6 +411,44 @@ def test_parse_events_returns_decoded_dicts(adapter: CodexAdapter) -> None:
     assert events[0]["thread_id"] == "019f83b2-thread-abc"
 
 
+def test_parse_events_preserves_reasoning_and_tool_items(
+    adapter: CodexAdapter,
+) -> None:
+    source_events = [
+        {
+            "type": "item.completed",
+            "item": {"id": "reasoning-1", "type": "reasoning", "text": "Checking files"},
+        },
+        {
+            "type": "item.updated",
+            "item": {
+                "id": "command-1",
+                "type": "command_execution",
+                "command": "pwd",
+                "aggregated_output": "/workspace\n",
+                "status": "completed",
+                "exit_code": 0,
+            },
+        },
+        {
+            "type": "item.completed",
+            "item": {
+                "id": "patch-1",
+                "type": "file_change",
+                "changes": [{"path": "main.py", "kind": "update"}],
+                "status": "completed",
+            },
+        },
+    ]
+
+    events = adapter.parse_events(
+        "\n".join(json.dumps(event) for event in source_events),
+        RunRequest(event_mode="full"),
+    )
+
+    assert events == source_events
+
+
 # ── parse_stream_event ───────────────────────────────────────────────────────
 
 
