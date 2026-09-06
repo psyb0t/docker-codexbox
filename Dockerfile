@@ -7,7 +7,7 @@
 # NOTE on hardening: the base sets `aicode` (UID 1000) as its runtime user via
 # `setpriv` inside `aicodebox-entrypoint`. This Dockerfile switches to root
 # only for the install steps below; runtime drops back to aicode automatically.
-ARG BASE_IMAGE=psyb0t/aicodebox:v0.14.6@sha256:0895ce88281fd1c307fdbbca5cec86989a252a1ca314713d74eec521c7651853
+ARG BASE_IMAGE=psyb0t/aicodebox:v0.14.8@sha256:3f28a053b88d9989698444c0f3d372b5ec6865df1eacb3ae11333245876a0b51
 FROM ${BASE_IMAGE}
 
 # MCP Registry ownership label — identifies this image as the OCI package for
@@ -49,7 +49,7 @@ USER root
 # ~/.local/bin, so `command -v codex` there would come up empty and silently
 # skip the API-key seeding. The link is root-owned and points by path, so an
 # update that replaces the target keeps resolving.
-ARG CODEX_VERSION=0.144.6
+ARG CODEX_VERSION=0.151.0
 ENV PATH="/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
         @openai/codex@${CODEX_VERSION} \

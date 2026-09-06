@@ -108,8 +108,8 @@ the relevant commands and configuration.
 
 The full image adds:
 
-- Go 1.26.1 with gopls, Delve, golangci-lint, staticcheck, gofumpt, and test/code-generation helpers
-- Python 3.12.11 with pytest, Black, Flake8, mypy, Pyright, Poetry, Pipenv, and common HTTP/parsing libraries
+- Go 1.26.7 with gopls, Delve, golangci-lint, staticcheck, gofumpt, and test/code-generation helpers
+- Python 3.14.7 with pytest, Black, Flake8, mypy, Pyright, Poetry, Pipenv, and common HTTP/parsing libraries
 - JavaScript and TypeScript linting, formatting, process, framework, API-test, static-server, Lighthouse, and Storybook CLIs
 - GitHub CLI, Terraform, kubectl, and Helm
 - Build tools, CMake, ClangFormat, Valgrind, GDB, strace, and ltrace

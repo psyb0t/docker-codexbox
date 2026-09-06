@@ -9,8 +9,8 @@ VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyp
 TAG        := v$(VERSION)
 # Published base image pinned to its immutable multi-architecture manifest.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:v0.14.6@sha256:0895ce88281fd1c307fdbbca5cec86989a252a1ca314713d74eec521c7651853
-CODEX_VERSION ?= 0.144.6
+BASE_IMAGE ?= psyb0t/aicodebox:v0.14.8@sha256:3f28a053b88d9989698444c0f3d372b5ec6865df1eacb3ae11333245876a0b51
+CODEX_VERSION ?= 0.151.0
 
 .PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version pkg-lock
 

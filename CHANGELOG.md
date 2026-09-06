@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.10, 2026-09-06
+
+- Updates the Codex CLI to 0.151.0.
+- Rebuilds on aicodebox v0.14.8, which provides Node.js 24.20.0 and Python 3.14.7.
+
 ## v0.5.9, 2026-09-04
 
 - Bumped the digest-pinned base image to `psyb0t/aicodebox:v0.14.6`, which adds independent event retention through `eventMode` and the stable full-event envelope to `POST /run`.
