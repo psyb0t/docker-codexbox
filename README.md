@@ -69,7 +69,10 @@ install-full` build their image first; `make install-wrapper` only installs the
 local `wrapper.sh` against the selected existing image. It fails if that image
 is absent instead of falling back to `docker pull`.
 
-The remote installer downloads `wrapper.sh` from its matching release tag. Managed launchers can set `CODEXBOX_INSTALL_DIR`, `CODEXBOX_BIN_NAME`, and `AICODEBOX_MANAGED_INSTALL=1` to install into a private wrapper bundle without an SSH-key prompt.
+The remote installer downloads `wrapper.sh` from its matching release tag.
+Automation can set `CODEXBOX_INSTALL_DIR`, `CODEXBOX_BIN_NAME`, and
+`AICODEBOX_MANAGED_INSTALL=1` when it installs into a different command
+directory without prompting to replace an existing SSH key.
 
 ## Using the `codexbox` wrapper
 
@@ -94,6 +97,12 @@ codexbox clear-session               # drop codex's saved sessions (keeps auth +
 The wrapper forwards `"$@"` straight to the image, so any `codex` subcommand works (`codexbox mcp ...`, `codexbox doctor`, etc.). The sandbox-bypass flag is injected inside the container — you never pass it yourself.
 
 The bare interactive TUI defaults to **continuing the most recent session for the directory you're in** (same idea as claudebox's default) — codex's own `resume --last` cwd-scopes the lookup and starts a fresh session automatically when there's nothing to resume, so this is safe on a brand-new workspace too. Pass `--no-continue` to force a fresh session instead.
+
+Install `codexbox`, `claudebox`, and `pibox` in the same command directory,
+normally `/usr/local/bin`, when one box needs to launch another. The wrapper
+finds sibling wrapper files there and mounts them read-only into the container.
+A sibling wrapper then runs through the host Docker daemon and mounts its own
+host data directory. Codexbox does not directly mount another agent's home.
 
 ### Manual Docker use
 
@@ -146,8 +155,12 @@ Set these on the host before running `codexbox`:
 | `CODEXBOX_CONTAINER_NAME` | derived from `$PWD` | Override the per-workspace container name |
 | `CODEXBOX_ENV_*` | — | Forward arbitrary env into the container (prefix stripped: `CODEXBOX_ENV_FOO=bar` → `FOO=bar`) |
 | `CODEXBOX_MOUNT_*` | — | Mount extra host dirs (`/host:/container` syntax, or a bare path for same-path-both-sides) |
+| `AICODEBOX_ENV_*` | — | Forward a shared environment variable into the launched container, with the prefix stripped |
+| `AICODEBOX_MOUNT_*` | — | Mount a shared host directory into the launched container |
 
-When `AICODEBOX_LAUNCH_CONTEXT_VERSION` is set, the wrapper uses the supplied `AICODEBOX_HOST_*` paths as Docker bind sources. It passes the host context, available sibling wrappers, `AICODEBOX_ENV_*`, and `AICODEBOX_MOUNT_*` into the child so another box can be launched from inside it.
+`AICODEBOX_HOST_*` is the versioned nested-launch context used by sibling
+wrappers. It records host bind-source paths and is set automatically by a
+wrapper. Do not set it for an ordinary host launch.
 
 `CODEXBOX_MODE_CRON=1` + `CODEXBOX_MODE_CRON_FILE=/path/cron.yaml codexbox` starts the cron scheduler as a long-running background container instead.
 

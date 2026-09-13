@@ -44,6 +44,13 @@ uses that existing image without rebuilding it.
 
 **Verify:** `codexbox --version` should print the codex CLI version.
 
+### Sibling boxes
+
+Install `codexbox`, `claudebox`, and `pibox` in the same command directory,
+normally `/usr/local/bin`, to make the sibling commands available inside a
+box. The parent mounts only the wrapper files read-only. A sibling wrapper then
+runs through the host Docker daemon and mounts its own host data directory.
+
 ## Image Variants
 
 | Image | Tag | Contents |

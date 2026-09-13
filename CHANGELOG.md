@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.6.1, 2026-09-13
+
+- Corrects host-wrapper setup and shared-settings documentation.
+- Pins the remote installer to the matching `v0.6.1` wrapper.
+
 ## v0.6.0, 2026-09-13
 
 - Adds managed installation into a caller-selected wrapper directory without
