@@ -102,7 +102,7 @@ the relevant commands and configuration.
 ## Image variants
 
 - `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
-- `psyb0t/codexbox:latest-full` adds the general-purpose development toolchain from Claudebox's full image while retaining Codexbox's own adapter, entrypoint, auth, and config.
+- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.15.0-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
 
 `CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
 
@@ -116,13 +116,9 @@ The full image adds:
 - PostgreSQL, MySQL, SQLite, and Redis clients
 - Vim, Nano, tmux, htop, archive tools, network diagnostics, ripgrep, fd, bat, eza, shellcheck, and shfmt
 
-The full variant is reproducible by design: its minimal parent and the
-published aicodebox parent are digest-pinned; Node tools install through a
-committed pnpm lockfile with lifecycle scripts disabled; Python tools install
-from a committed hash-locked requirements file; and Go tools build from a
-committed `go.sum` with the checksum database enabled. The lock inputs use a
-fixed seven-day release-age cutoff and are refreshed deliberately, not during
-an ordinary image build.
+The full variant is pinned to the released Aicodebox full manifest. Aicodebox
+owns the shared toolchain pins, locks, and supply-chain checks. Codexbox adds
+only its agent package and startup layer.
 
 **Licensing note:** the minimal image is clean — just Apache-2.0 Codex on
 top of the aicodebox base. The full image additionally bundles HashiCorp

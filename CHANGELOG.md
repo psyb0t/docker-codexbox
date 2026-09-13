@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.5.11, 2026-09-13
+
+- Rebuilds the minimal image on digest-pinned `psyb0t/aicodebox:v0.15.0`.
+- Makes `latest-full` start directly from digest-pinned `aicodebox:v0.15.0-full`. Codexbox now adds only Codex, its adapter, and its startup layer.
+- Removes duplicate full-image toolchain locks and builders. Both variants build independently in CI.
+
 ## v0.5.10, 2026-09-06
 
 - Updates the Codex CLI to 0.151.0.

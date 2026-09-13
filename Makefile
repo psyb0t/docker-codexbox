@@ -9,10 +9,11 @@ VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyp
 TAG        := v$(VERSION)
 # Published base image pinned to its immutable multi-architecture manifest.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:v0.14.8@sha256:3f28a053b88d9989698444c0f3d372b5ec6865df1eacb3ae11333245876a0b51
+BASE_IMAGE ?= psyb0t/aicodebox:v0.15.0@sha256:937dc2df9a89cc78b59bc27c021155ad3f7d96617d26238fb9617c5c2a2d03c7
+FULL_BASE_IMAGE ?= psyb0t/aicodebox:v0.15.0-full@sha256:ec4dac99bca4dba648f598af0bd94f1a98185e53d54ea5717db0c2076e12a612
 CODEX_VERSION ?= 0.151.0
 
-.PHONY: all build build-full build-all install install-full install-wrapper pull-base test test-full-image test-image-select clean help version pkg-lock
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select clean help version pkg-lock
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -46,6 +47,15 @@ pull-base: ## Pull the published aicodebox base image (SKIP_BASE_PULL=1 to use a
 		docker pull $(BASE_IMAGE); \
 	fi
 
+pull-full-base: ## Pull the published full aicodebox image (SKIP_BASE_PULL=1 for a local image)
+	@if [ "$${SKIP_BASE_PULL:-0}" = "1" ]; then \
+		echo "[make] SKIP_BASE_PULL=1, using local $(FULL_BASE_IMAGE)"; \
+		docker image inspect $(FULL_BASE_IMAGE) >/dev/null 2>&1 \
+			|| { echo "full base image not found: $(FULL_BASE_IMAGE)" >&2; exit 1; }; \
+	else \
+		docker pull $(FULL_BASE_IMAGE); \
+	fi
+
 build: pull-base ## Build + tag the image (both :v<VERSION> and :latest)
 	docker build \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
@@ -53,10 +63,11 @@ build: pull-base ## Build + tag the image (both :v<VERSION> and :latest)
 		-t $(IMAGE_NAME):$(TAG) \
 		-t $(IMAGE_NAME):latest .
 
-build-full: build ## Build the toolchain-loaded variant on the matching minimal image
+build-full: pull-full-base ## Build the full variant on the full aicodebox base
 	docker build \
 		-f Dockerfile.full \
-		--build-arg BASE_IMAGE=$(IMAGE_NAME):$(TAG) \
+		--build-arg BASE_IMAGE=$(FULL_BASE_IMAGE) \
+		--build-arg CODEX_VERSION=$(CODEX_VERSION) \
 		-t $(IMAGE_NAME):$(TAG)-full \
 		-t $(IMAGE_NAME):latest-full \
 		.

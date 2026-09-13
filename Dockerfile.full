@@ -1,218 +1,39 @@
-# codexbox:latest-full — Codex plus the general-purpose development toolchain.
+# codexbox:latest-full. Codex on the shared full aicodebox base.
 #
-# This layers on the minimal image so both variants share the same Codex CLI,
-# adapter, entrypoint, and authentication behavior.
-ARG BASE_IMAGE=psyb0t/codexbox:latest
+# Generic development tooling belongs to aicodebox. This image adds only
+# Codex, the codexbox adapter, and Codex-specific startup behavior.
+ARG BASE_IMAGE=psyb0t/aicodebox:v0.15.0-full@sha256:ec4dac99bca4dba648f598af0bd94f1a98185e53d54ea5717db0c2076e12a612
 FROM ${BASE_IMAGE}
+
+LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
 
 USER root
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    CODEXBOX_IMAGE_VARIANT=full
+ARG CODEX_VERSION=0.151.0
+ENV PATH="/home/aicode/.local/bin:${PATH}"
+RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
+        @openai/codex@${CODEX_VERSION} \
+    && printf 'prefix=/home/aicode/.local\n' > /home/aicode/.npmrc \
+    && chown -R aicode:aicode /home/aicode/.local /home/aicode/.npmrc \
+    && ln -s /home/aicode/.local/bin/codex /usr/local/bin/codex
 
-# The mirror rotation below only rewrites the Ubuntu source, but `apt-get
-# update` reads every configured source. The base image installs Node from
-# NodeSource and leaves that apt source behind, so all three attempts fail on
-# deb.nodesource.com — a host behind a CDN that returns 403 to CI runner
-# address ranges — over a repository this layer never wanted. Node is already
-# installed in the base, so the source has no remaining purpose. Removing it
-# also shrinks what a later `apt-get install` trusts.
-RUN rm -f /etc/apt/sources.list.d/nodesource.sources \
-          /etc/apt/sources.list.d/nodesource.list
+COPY codexbox /opt/codexbox
+RUN uv pip install --system --break-system-packages --no-deps /opt/codexbox
 
-RUN set -eux; \
-    source_file=/etc/apt/sources.list.d/ubuntu.sources; \
-    architecture="$(dpkg --print-architecture)"; \
-    for attempt in 1 2 3; do \
-        case "$architecture:$attempt" in \
-            amd64:1) mirror=https://archive.ubuntu.com/ubuntu/ ;; \
-            amd64:2) mirror=https://mirrors.edge.kernel.org/ubuntu/ ;; \
-            amd64:3) mirror=https://mirror.csclub.uwaterloo.ca/ubuntu/ ;; \
-            arm64:*) mirror=https://ports.ubuntu.com/ubuntu-ports/ ;; \
-            *) echo "unsupported apt architecture: $architecture" >&2; exit 1 ;; \
-        esac; \
-        sed -i "s|^URIs: .*$|URIs: $mirror|" "$source_file"; \
-        rm -rf /var/lib/apt/lists/*; \
-        if apt-get \
-            -o Acquire::Retries=3 \
-            -o Acquire::http::Timeout=45 \
-            -o Acquire::https::Timeout=45 \
-            update && \
-            apt-get \
-            -o Acquire::Retries=3 \
-            -o Acquire::http::Timeout=45 \
-            -o Acquire::https::Timeout=45 \
-            install -y --no-install-recommends \
-        build-essential make cmake pkg-config libssl-dev \
-        python3-pip python-is-python3 \
-        nano vim htop tmux \
-        unzip zip tar \
-        net-tools iputils-ping dnsutils \
-        tree fd-find ripgrep bat eza silversearcher-ag \
-        shellcheck shfmt httpie \
-        clang-format valgrind gdb strace ltrace \
-        sqlite3 postgresql-client default-mysql-client redis-tools \
-        zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-        libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
-        libffi-dev liblzma-dev; then \
-            rm -rf /var/lib/apt/lists/*; \
-            exit 0; \
-        fi; \
-        echo "apt package transaction failed (attempt ${attempt}/3, mirror: $mirror); retrying" >&2; \
-        sleep "$((attempt * 5))"; \
-    done; \
-    echo "apt package transaction failed after 3 attempts" >&2; \
-    exit 1
+COPY codexbox/init.d/ /aicodebox-init.d/
+RUN chmod +x /aicodebox-init.d/*.sh
 
-ARG TARGETARCH
+ENV AICODEBOX_ADAPTER=codexbox.adapter:CodexAdapter \
+    AICODEBOX_AGENT_BINARY=codexbox-agent \
+    CODEXBOX_IMAGE_VARIANT=full \
+    CODEX_HOME=/home/aicode/.codex
 
-ARG GO_VERSION=1.26.7
-ARG GO_SHA256_AMD64=ffb5f8de10c62550dfddab66b36b57030721e0a44a3218e9e1181d7b59f121ca
-ARG GO_SHA256_ARM64=5a4ec883379d51ee9ce1040d5e87f8d35e20387574dd8c947feb01eabc3c1b37
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) GO_SHA256="$GO_SHA256_AMD64" ;; \
-        arm64) GO_SHA256="$GO_SHA256_ARM64" ;; \
-        *) echo "unsupported Go architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    GO_ARCHIVE="/tmp/go${GO_VERSION}.linux-${ARCH}.tar.gz" && \
-    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o "$GO_ARCHIVE" && \
-    echo "$GO_SHA256  $GO_ARCHIVE" | sha256sum -c - && \
-    tar -xzf "$GO_ARCHIVE" -C /usr/local && \
-    rm -f "$GO_ARCHIVE" && \
-    ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt && \
-    echo 'export PATH="$PATH:/usr/local/go/bin"' > /etc/profile.d/go.sh
-ENV PATH="/usr/local/go/bin:${PATH}"
-ENV GOPROXY=https://proxy.golang.org,direct \
-    GOSUMDB=sum.golang.org \
-    GOFLAGS=-mod=readonly
+RUN mkdir -p /home/aicode/.codex && chown -R aicode:aicode /home/aicode/.codex
 
-ARG GOLANGCI_LINT_VERSION=2.13.2
-ARG GOLANGCI_LINT_SHA256_AMD64=2277d43b98ec0054280f2ac26b53268bae97682444678a59a657dd565da021d6
-ARG GOLANGCI_LINT_SHA256_ARM64=a2a4e0065aa41be71f7c5ac90f271b61751331e5d04314e62afe4027855f0893
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) LINT_SHA256="$GOLANGCI_LINT_SHA256_AMD64" ;; \
-        arm64) LINT_SHA256="$GOLANGCI_LINT_SHA256_ARM64" ;; \
-        *) echo "unsupported golangci-lint architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    LINT_ARCHIVE=/tmp/golangci-lint.tar.gz && \
-    curl -fsSL \
-        "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}.tar.gz" \
-        -o "$LINT_ARCHIVE" && \
-    echo "$LINT_SHA256  $LINT_ARCHIVE" | sha256sum -c - && \
-    tar -xzf "$LINT_ARCHIVE" -C /tmp && \
-    install -m 0755 \
-        "/tmp/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}/golangci-lint" \
-        /usr/local/bin/golangci-lint && \
-    rm -rf "$LINT_ARCHIVE" \
-        "/tmp/golangci-lint-${GOLANGCI_LINT_VERSION}-linux-${ARCH}"
+COPY codexbox-agent.sh /usr/local/bin/codexbox-agent
+RUN chmod +x /usr/local/bin/codexbox-agent
 
-COPY full-go/go.mod full-go/go.sum full-go/tools.txt /tmp/codexbox-go-tools/
-RUN cd /tmp/codexbox-go-tools && \
-    go mod download all && \
-    while IFS= read -r package; do \
-        case "$package" in \#*|'') continue ;; esac; \
-        binary="${package##*/}"; \
-        CGO_ENABLED=0 go build -mod=readonly -o "/usr/local/bin/$binary" "$package"; \
-    done < tools.txt && \
-    rm -rf /tmp/codexbox-go-tools /root/.cache/go-build
+COPY codexbox-entrypoint.sh /usr/local/bin/codexbox-entrypoint
+RUN chmod +x /usr/local/bin/codexbox-entrypoint
 
-ARG GH_VERSION=2.96.0
-ARG GH_SHA256_AMD64=83d5c2ccad5498f58bf6368acb1ab32588cf43ab3a4b1c301bf36328b1c8bd60
-ARG GH_SHA256_ARM64=06f86ec7103d41993b76cd78072f43595c34aaa56506d971d9860e67140bf909
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) GH_SHA256="$GH_SHA256_AMD64" ;; \
-        arm64) GH_SHA256="$GH_SHA256_ARM64" ;; \
-        *) echo "unsupported gh architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    GH_ARCHIVE=/tmp/gh.tar.gz && \
-    curl -fsSL \
-        "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.tar.gz" \
-        -o "$GH_ARCHIVE" && \
-    echo "$GH_SHA256  $GH_ARCHIVE" | sha256sum -c - && \
-    tar -xzf "$GH_ARCHIVE" -C /tmp && \
-    install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${ARCH}/bin/gh" /usr/local/bin/gh && \
-    rm -rf "$GH_ARCHIVE" "/tmp/gh_${GH_VERSION}_linux_${ARCH}"
-
-ARG TERRAFORM_VERSION=1.15.8
-ARG TERRAFORM_SHA256_AMD64=d25ce7b6902013ad905db3d2eab0be4cd905887fe88b81a6171b8d5503c31f3d
-ARG TERRAFORM_SHA256_ARM64=8891e9dcedc9e3b8950bc6af9d4d8af1f4cfade3062f53b9dc403a89f6ce8c9c
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) TERRAFORM_SHA256="$TERRAFORM_SHA256_AMD64" ;; \
-        arm64) TERRAFORM_SHA256="$TERRAFORM_SHA256_ARM64" ;; \
-        *) echo "unsupported Terraform architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    TERRAFORM_ARCHIVE=/tmp/terraform.zip && \
-    curl -fsSL \
-        "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip" \
-        -o "$TERRAFORM_ARCHIVE" && \
-    echo "$TERRAFORM_SHA256  $TERRAFORM_ARCHIVE" | sha256sum -c - && \
-    unzip -q "$TERRAFORM_ARCHIVE" -d /tmp/terraform && \
-    install -m 0755 /tmp/terraform/terraform /usr/local/bin/terraform && \
-    rm -rf "$TERRAFORM_ARCHIVE" /tmp/terraform
-
-ARG KUBECTL_VERSION=v1.31.14
-ARG KUBECTL_SHA256_AMD64=8791ec7c8966b61420d55103a5fb948de9f0ca3d7306d789734975ad9704bdb0
-ARG KUBECTL_SHA256_ARM64=3abb0c2d7121e1833831f56fd857a93de386e76d14b64baf86220d0afe495209
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) KUBECTL_SHA256="$KUBECTL_SHA256_AMD64" ;; \
-        arm64) KUBECTL_SHA256="$KUBECTL_SHA256_ARM64" ;; \
-        *) echo "unsupported kubectl architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" \
-        -o /tmp/kubectl && \
-    echo "$KUBECTL_SHA256  /tmp/kubectl" | sha256sum -c - && \
-    install -m 0755 /tmp/kubectl /usr/local/bin/kubectl && \
-    rm -f /tmp/kubectl
-
-ARG HELM_VERSION=3.21.3
-ARG HELM_SHA256_AMD64=15e041a93a590dce8100f39385cd98c84a765c9e36aeeb9e2dc6ff9e4769e2e0
-ARG HELM_SHA256_ARM64=67f58155079ff9ffab98ba5c88daff0ed9b542f3a4732f5dd426dde7dd0f5244
-RUN ARCH="${TARGETARCH:-amd64}" && \
-    case "$ARCH" in \
-        amd64) HELM_SHA256="$HELM_SHA256_AMD64" ;; \
-        arm64) HELM_SHA256="$HELM_SHA256_ARM64" ;; \
-        *) echo "unsupported Helm architecture: $ARCH" >&2; exit 1 ;; \
-    esac && \
-    HELM_ARCHIVE=/tmp/helm.tar.gz && \
-    curl -fsSL "https://get.helm.sh/helm-v${HELM_VERSION}-linux-${ARCH}.tar.gz" \
-        -o "$HELM_ARCHIVE" && \
-    echo "$HELM_SHA256  $HELM_ARCHIVE" | sha256sum -c - && \
-    tar -xzf "$HELM_ARCHIVE" -C /tmp && \
-    install -m 0755 "/tmp/linux-${ARCH}/helm" /usr/local/bin/helm && \
-    rm -rf "$HELM_ARCHIVE" "/tmp/linux-${ARCH}"
-
-COPY full-node/package.json full-node/pnpm-lock.yaml full-node/.npmrc /opt/codexbox-node/
-RUN corepack pnpm@11.15.1 install --dir /opt/codexbox-node \
-        --frozen-lockfile --prod --ignore-scripts && \
-    find /opt/codexbox-node/node_modules/.bin -maxdepth 1 -type f -executable \
-        -exec ln -sf '{}' /usr/local/bin/ ';'
-
-ARG PYENV_VERSION=2.8.4
-ARG PYENV_SHA256=6f80750a10d20f1b74252d81d543f0543c8f49ba9ea5804de8a82afedb4e3b8c
-ARG PYTHON_VERSION=3.14.7
-ENV PYENV_ROOT=/usr/local/pyenv \
-    PATH="/usr/local/pyenv/shims:/usr/local/pyenv/bin:${PATH}"
-RUN PYENV_ARCHIVE=/tmp/pyenv.tar.gz && \
-    curl -fsSL "https://github.com/pyenv/pyenv/archive/refs/tags/v${PYENV_VERSION}.tar.gz" \
-        -o "$PYENV_ARCHIVE" && \
-    echo "$PYENV_SHA256  $PYENV_ARCHIVE" | sha256sum -c - && \
-    mkdir -p "$PYENV_ROOT" && \
-    tar -xzf "$PYENV_ARCHIVE" --strip-components=1 -C "$PYENV_ROOT" && \
-    rm -f "$PYENV_ARCHIVE" && \
-    pyenv install "$PYTHON_VERSION" && \
-    pyenv global "$PYTHON_VERSION" && \
-    { \
-        echo 'export PYENV_ROOT="/usr/local/pyenv"'; \
-        echo 'export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"'; \
-    } > /etc/profile.d/pyenv.sh
-
-COPY full-python/requirements.txt /tmp/codexbox-python-tools/requirements.txt
-RUN "$PYENV_ROOT/versions/$PYTHON_VERSION/bin/python" -m pip install --no-cache-dir \
-        --require-hashes -r /tmp/codexbox-python-tools/requirements.txt && \
-    pyenv rehash
+ENTRYPOINT ["/usr/local/bin/codexbox-entrypoint"]
