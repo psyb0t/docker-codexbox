@@ -4,6 +4,14 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.6.0, 2026-09-13
+
+- Adds managed installation into a caller-selected wrapper directory without
+  replacing existing SSH keys.
+- Adds nested box launches with host-path propagation, sibling wrapper mounts,
+  and shared `AICODEBOX_ENV_*` and `AICODEBOX_MOUNT_*` settings.
+- Downloads the installed wrapper from the matching immutable release tag.
+
 ## v0.5.11, 2026-09-13
 
 - Rebuilds the minimal image on digest-pinned `psyb0t/aicodebox:v0.15.0`.

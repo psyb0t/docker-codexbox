@@ -69,6 +69,8 @@ install-full` build their image first; `make install-wrapper` only installs the
 local `wrapper.sh` against the selected existing image. It fails if that image
 is absent instead of falling back to `docker pull`.
 
+The remote installer downloads `wrapper.sh` from its matching release tag. Managed launchers can set `CODEXBOX_INSTALL_DIR`, `CODEXBOX_BIN_NAME`, and `AICODEBOX_MANAGED_INSTALL=1` to install into a private wrapper bundle without an SSH-key prompt.
+
 ## Using the `codexbox` wrapper
 
 The wrapper mounts the current directory as the workspace, persists `~/.codex`
@@ -144,6 +146,8 @@ Set these on the host before running `codexbox`:
 | `CODEXBOX_CONTAINER_NAME` | derived from `$PWD` | Override the per-workspace container name |
 | `CODEXBOX_ENV_*` | — | Forward arbitrary env into the container (prefix stripped: `CODEXBOX_ENV_FOO=bar` → `FOO=bar`) |
 | `CODEXBOX_MOUNT_*` | — | Mount extra host dirs (`/host:/container` syntax, or a bare path for same-path-both-sides) |
+
+When `AICODEBOX_LAUNCH_CONTEXT_VERSION` is set, the wrapper uses the supplied `AICODEBOX_HOST_*` paths as Docker bind sources. It passes the host context, available sibling wrappers, `AICODEBOX_ENV_*`, and `AICODEBOX_MOUNT_*` into the child so another box can be launched from inside it.
 
 `CODEXBOX_MODE_CRON=1` + `CODEXBOX_MODE_CRON_FILE=/path/cron.yaml codexbox` starts the cron scheduler as a long-running background container instead.
 

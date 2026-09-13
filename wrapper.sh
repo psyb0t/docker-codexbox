@@ -20,6 +20,14 @@
 # install.sh rewrites this line so its minimal/full choice persists.
 CODEXBOX_INSTALLED_IMAGE="psyb0t/codexbox:latest"
 
+case "${AICODEBOX_LAUNCH_CONTEXT_VERSION:-}" in
+    "" | 1) ;;
+    *)
+        echo "❌ unsupported AICODEBOX_LAUNCH_CONTEXT_VERSION" >&2
+        exit 1
+        ;;
+esac
+
 DEBUG="${CODEXBOX_ENV_DEBUG:-${DEBUG:-}}"
 dbg() {
     [ "${DEBUG:-}" = "true" ] && echo "[DEBUG $(date +%H:%M:%S.%3N)] $*" >&2
@@ -38,9 +46,12 @@ if [ -z "$CODEX_IMAGE" ]; then
             ;;
     esac
 fi
-CODEX_DIR="${CODEXBOX_DATA_DIR:-$HOME/.codex}"
-CODEX_SSH="${CODEXBOX_SSH_DIR:-$HOME/.ssh/codexbox}"
+HOST_HOME="${AICODEBOX_HOST_HOME:-$HOME}"
+HOST_WORKSPACE="$PWD"
+CODEX_DIR="${CODEXBOX_DATA_DIR:-${AICODEBOX_HOST_CODEX_HOME:-$HOST_HOME/.codex}}"
+CODEX_SSH="${CODEXBOX_SSH_DIR:-$HOST_HOME/.ssh/codexbox}"
 CODEX_MAX_MEM="${CODEXBOX_MAX_MEM:-10g}"
+WRAPPER_DIR="${AICODEBOX_HOST_WRAPPER_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
 # Container path the codex config+auth dir is mounted at — matches CODEX_HOME
 # baked into the image's Dockerfile.
@@ -53,7 +64,9 @@ readonly CONTAINER_CODEX_HOME="/home/aicode/.codex"
 OPENAI_API_KEY="${CODEXBOX_ENV_OPENAI_API_KEY:-${OPENAI_API_KEY:-}}"
 OPENAI_BASE_URL="${CODEXBOX_ENV_OPENAI_BASE_URL:-${OPENAI_BASE_URL:-}}"
 
-mkdir -p "$CODEX_DIR" "$CODEX_SSH"
+if [ -z "${AICODEBOX_LAUNCH_CONTEXT_VERSION:-}" ]; then
+    mkdir -p "$CODEX_DIR" "$CODEX_SSH"
+fi
 
 # Convert PWD to a valid container name (slashes to underscores)
 sanitized_pwd=$(echo "$PWD" | sed 's/\//_/g')
@@ -62,13 +75,35 @@ dbg "container_name=$container_name CODEX_DIR=$CODEX_DIR PWD=$PWD"
 
 DOCKER_ARGS=(
     --network host
-    -e CODEXBOX_WORKSPACE="$PWD"
+    -e CODEXBOX_WORKSPACE="$HOST_WORKSPACE"
     -e CODEXBOX_CONTAINER_NAME="$container_name"
+    -e AICODEBOX_LAUNCH_CONTEXT_VERSION=1
+    -e "AICODEBOX_HOST_HOME=$HOST_HOME"
+    -e "AICODEBOX_HOST_WORKSPACE=$HOST_WORKSPACE"
+    -e "AICODEBOX_HOST_CODEX_HOME=$CODEX_DIR"
+    -e "AICODEBOX_HOST_CLAUDE_HOME=${AICODEBOX_HOST_CLAUDE_HOME:-$HOST_HOME/.claude}"
+    -e "AICODEBOX_HOST_PI_HOME=${AICODEBOX_HOST_PI_HOME:-$HOST_HOME/.pi}"
+    -e "AICODEBOX_HOST_WRAPPER_DIR=$WRAPPER_DIR"
+    -e "AICODEBOX_HOST_CODEX_WRAPPER=${AICODEBOX_HOST_CODEX_WRAPPER:-$WRAPPER_DIR/codexbox}"
+    -e "AICODEBOX_HOST_CLAUDE_WRAPPER=${AICODEBOX_HOST_CLAUDE_WRAPPER:-$WRAPPER_DIR/claudebox}"
+    -e "AICODEBOX_HOST_PI_WRAPPER=${AICODEBOX_HOST_PI_WRAPPER:-$WRAPPER_DIR/pibox}"
     -v "$CODEX_SSH:/home/aicode/.ssh"
     -v "$CODEX_DIR:$CONTAINER_CODEX_HOME"
-    -v "$PWD:$PWD"
+    -v "$HOST_WORKSPACE:$HOST_WORKSPACE"
     -v /var/run/docker.sock:/var/run/docker.sock
 )
+
+for wrapper_name in codexbox claudebox pibox; do
+    case "$wrapper_name" in
+        codexbox) wrapper_path="${AICODEBOX_HOST_CODEX_WRAPPER:-$WRAPPER_DIR/codexbox}" ;;
+        claudebox) wrapper_path="${AICODEBOX_HOST_CLAUDE_WRAPPER:-$WRAPPER_DIR/claudebox}" ;;
+        pibox) wrapper_path="${AICODEBOX_HOST_PI_WRAPPER:-$WRAPPER_DIR/pibox}" ;;
+    esac
+    [ -f "$wrapper_path" ] || continue
+    DOCKER_ARGS+=(
+        --mount "type=bind,src=$wrapper_path,dst=/usr/local/bin/$wrapper_name,readonly"
+    )
+done
 
 # Forward auth via -e. The key value is never echoed/logged (only its presence
 # gates the arg) — per the never-log-secrets rule.
@@ -83,6 +118,12 @@ while IFS='=' read -r name value; do
     dbg "forwarding env: $stripped"
 done < <(env | grep -E "^CODEXBOX_ENV_")
 
+while IFS='=' read -r name value; do
+    stripped="${name#AICODEBOX_ENV_}"
+    DOCKER_ARGS+=(-e "$stripped=$value")
+    dbg "forwarding common env: $stripped"
+done < <(env | grep -E "^AICODEBOX_ENV_")
+
 # mount extra volumes via CODEXBOX_MOUNT_* (value with a ':' is passed as raw
 # docker -v syntax; otherwise the same path is mounted on both sides)
 while IFS='=' read -r _name value; do
@@ -92,6 +133,14 @@ while IFS='=' read -r _name value; do
     esac
     dbg "mounting volume: $value"
 done < <(env | grep -E "^CODEXBOX_MOUNT_")
+
+while IFS='=' read -r _name value; do
+    case "$value" in
+        *:*) DOCKER_ARGS+=(-v "$value") ;;
+        *) DOCKER_ARGS+=(-v "$value:$value") ;;
+    esac
+    dbg "mounting common volume: $value"
+done < <(env | grep -E "^AICODEBOX_MOUNT_")
 
 # TTY flags: -it only when both stdin and stdout are terminals, so piped /
 # captured invocations (`codexbox exec "..." | jq`) don't error with

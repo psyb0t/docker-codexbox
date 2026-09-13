@@ -49,3 +49,6 @@ profile.out
 htmlcov
 .testing
 .plan-and-delegate
+
+# agent scratch, never part of a build
+.anustimes/

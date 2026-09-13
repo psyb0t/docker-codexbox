@@ -6,7 +6,8 @@
 # stdout via plain echo (this is an interactive installer, not a pipeline).
 set -euo pipefail
 
-readonly WRAPPER_URL="https://raw.githubusercontent.com/psyb0t/docker-codexbox/master/wrapper.sh"
+readonly CODEXBOX_RELEASE_REF="v0.6.0"
+readonly WRAPPER_URL="https://raw.githubusercontent.com/psyb0t/docker-codexbox/${CODEXBOX_INSTALL_REF:-$CODEXBOX_RELEASE_REF}/wrapper.sh"
 
 case "${CODEXBOX_FULL:-0}" in
     0) readonly IMAGE="psyb0t/codexbox:latest" ;;
@@ -29,6 +30,16 @@ esac
 BIN_NAME="${1:-${CODEXBOX_BIN_NAME:-codexbox}}"
 INSTALL_DIR="${CODEXBOX_INSTALL_DIR:-/usr/local/bin}"
 BIN_PATH="$INSTALL_DIR/$BIN_NAME"
+HOST_HOME="${AICODEBOX_HOST_HOME:-$HOME}"
+
+case "${AICODEBOX_MANAGED_INSTALL:-${CODEXBOX_MANAGED_INSTALL:-0}}" in
+    0) readonly MANAGED_INSTALL=false ;;
+    1) readonly MANAGED_INSTALL=true ;;
+    *)
+        echo "❌ AICODEBOX_MANAGED_INSTALL must be 0 or 1" >&2
+        exit 1
+        ;;
+esac
 
 echo "🚀 Starting codexbox setup (binary: $BIN_NAME)..."
 
@@ -37,24 +48,28 @@ if ! command -v docker &>/dev/null; then
     exit 1
 fi
 
-echo "📁 Creating ~/.codex directory (CODEX_HOME — auth + config persist here)..."
-mkdir -p "$HOME/.codex"
+echo "📁 Creating Codex data directory..."
+mkdir -p "$HOST_HOME/.codex"
 
 echo "🔐 Creating SSH directory for codexbox..."
-mkdir -p "$HOME/.ssh/codexbox"
+mkdir -p "$HOST_HOME/.ssh/codexbox"
 
-if [ -f "$HOME/.ssh/codexbox/id_ed25519" ]; then
-    echo "🔑 SSH key already exists at $HOME/.ssh/codexbox/id_ed25519"
-    read -rp "   Replace existing key? [y/N] " response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
+if [ -f "$HOST_HOME/.ssh/codexbox/id_ed25519" ]; then
+    echo "🔑 SSH key already exists at $HOST_HOME/.ssh/codexbox/id_ed25519"
+    if [ "$MANAGED_INSTALL" = false ]; then
+        read -rp "   Replace existing key? [y/N] " response
+    else
+        response=n
+    fi
+    if [[ "${response:-n}" =~ ^[Yy]$ ]]; then
         echo "🗝️ Generating new SSH key for codexbox..."
-        ssh-keygen -t ed25519 -C "codexbox" -f "$HOME/.ssh/codexbox/id_ed25519" -N ""
+        ssh-keygen -t ed25519 -C "codexbox" -f "$HOST_HOME/.ssh/codexbox/id_ed25519" -N ""
     else
         echo "   Keeping existing key."
     fi
 else
     echo "🗝️ Generating SSH key for codexbox..."
-    ssh-keygen -t ed25519 -C "codexbox" -f "$HOME/.ssh/codexbox/id_ed25519" -N ""
+    ssh-keygen -t ed25519 -C "codexbox" -f "$HOST_HOME/.ssh/codexbox/id_ed25519" -N ""
 fi
 
 if [ "$SOURCE_LOCAL" = "true" ]; then
@@ -106,6 +121,7 @@ fi
 mv "$WRAPPER_BAKED_TMP" "$WRAPPER_TMP"
 
 echo "📝 Installing $BIN_NAME to $BIN_PATH..."
+sudo install -d -m 755 "$INSTALL_DIR"
 sudo install -m 755 "$WRAPPER_TMP" "$BIN_PATH"
 
 echo "✅ codexbox setup complete! You can now use '$BIN_NAME' from any directory."
@@ -115,4 +131,4 @@ echo "   • API key:      export OPENAI_API_KEY=sk-...   (then just run '$BIN_N
 echo "   • Subscription: $BIN_NAME login --device-auth   (ChatGPT Plus/Pro; persists in ~/.codex)"
 echo ""
 echo "🔑 If you use git over SSH inside the container, add this public key to GitHub:"
-echo "   $HOME/.ssh/codexbox/id_ed25519.pub"
+echo "   $HOST_HOME/.ssh/codexbox/id_ed25519.pub"

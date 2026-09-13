@@ -181,7 +181,7 @@ wheels = [
 
 [[package]]
 name = "codexbox"
-version = "0.5.11"
+version = "0.6.0"
 source = { editable = "." }
 
 [package.dev-dependencies]

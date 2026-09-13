@@ -13,7 +13,7 @@ BASE_IMAGE ?= psyb0t/aicodebox:v0.15.0@sha256:937dc2df9a89cc78b59bc27c021155ad3f
 FULL_BASE_IMAGE ?= psyb0t/aicodebox:v0.15.0-full@sha256:ec4dac99bca4dba648f598af0bd94f1a98185e53d54ea5717db0c2076e12a612
 CODEX_VERSION ?= 0.151.0
 
-.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select clean help version pkg-lock
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested clean help version pkg-lock
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -88,6 +88,9 @@ test: ## Run the full e2e test suite (needs .env.test)
 
 test-image-select: ## Verify installer/wrapper minimal/full selection without Docker
 	bash tests/test_image_select.sh
+
+test-managed-nested: ## Verify managed install and nested wrapper propagation without Docker
+	bash tests/test_managed_nested.sh
 
 test-full-image: build-full ## Build full and verify Codex plus every advertised tool
 	IMAGE=$(IMAGE_NAME):latest-full bash tests/test_full_image.sh
