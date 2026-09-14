@@ -6,7 +6,7 @@
 # stdout via plain echo (this is an interactive installer, not a pipeline).
 set -euo pipefail
 
-readonly CODEXBOX_RELEASE_REF="v0.6.1"
+readonly CODEXBOX_RELEASE_REF="v0.6.2"
 readonly WRAPPER_URL="https://raw.githubusercontent.com/psyb0t/docker-codexbox/${CODEXBOX_INSTALL_REF:-$CODEXBOX_RELEASE_REF}/wrapper.sh"
 
 case "${CODEXBOX_FULL:-0}" in

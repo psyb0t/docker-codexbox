@@ -2,14 +2,14 @@
 #
 # Generic development tooling belongs to aicodebox. This image adds only
 # Codex, the codexbox adapter, and Codex-specific startup behavior.
-ARG BASE_IMAGE=psyb0t/aicodebox:v0.15.0-full@sha256:ec4dac99bca4dba648f598af0bd94f1a98185e53d54ea5717db0c2076e12a612
+ARG BASE_IMAGE=psyb0t/aicodebox:v0.15.1-full@sha256:249e9fcea7b9bf0f7cf19e9b91e501875ead642f03d447846367d38b27225a7e
 FROM ${BASE_IMAGE}
 
 LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
 
 USER root
 
-ARG CODEX_VERSION=0.151.0
+ARG CODEX_VERSION=0.153.4
 ENV PATH="/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
         @openai/codex@${CODEX_VERSION} \

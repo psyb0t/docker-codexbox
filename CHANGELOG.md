@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.6.2, 2026-09-13
+
+- Updates the Codex CLI pin to `0.153.4`.
+- Rebuilds both variants on digest-pinned Aicodebox `v0.15.1`.
+
 ## v0.6.1, 2026-09-13
 
 - Corrects host-wrapper setup and shared-settings documentation.

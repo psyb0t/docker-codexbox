@@ -9,8 +9,8 @@ source "$TEST_DIR/common.sh"
 readonly IMAGE="${IMAGE:-psyb0t/codexbox:latest-full}"
 
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-    log ERROR "image not found: $IMAGE"
-    exit 1
+	log ERROR "image not found: $IMAGE"
+	exit 1
 fi
 
 docker run --rm --entrypoint /bin/bash "$IMAGE" -lc '
@@ -18,7 +18,7 @@ docker run --rm --entrypoint /bin/bash "$IMAGE" -lc '
 
     [ "${CODEXBOX_IMAGE_VARIANT:-}" = "full" ]
     codex --version
-    go version | grep -F "go1.26.7"
+    go version | grep -F "go1.26.8"
     python --version 2>&1 | grep -F "Python 3.14.7"
 
     tools=(
