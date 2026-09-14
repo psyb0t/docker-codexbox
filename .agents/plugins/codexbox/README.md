@@ -15,6 +15,24 @@ instance and authenticates with your bearer token when the server requires one.
 > container image — it connects to a codexbox server that **you** run. See
 > the [codexbox repo](https://github.com/psyb0t/docker-codexbox) to stand one up.
 
+## Start a local server
+
+Authenticate Codex first with `codexbox login --device-auth` or an
+`OPENAI_API_KEY`, then start the service through the wrapper from the workspace
+you want to expose. Set both bearer tokens before publishing a port.
+
+```bash
+CODEXBOX_ENV_CODEXBOX_API_MODE=1 \
+CODEXBOX_ENV_CODEXBOX_MCP_MODE=1 \
+CODEXBOX_ENV_CODEXBOX_AVAILABLE_MODELS=your-model-id \
+CODEXBOX_ENV_CODEXBOX_API_MODE_TOKEN=your-api-token \
+CODEXBOX_ENV_CODEXBOX_MCP_MODE_TOKEN=your-mcp-token \
+codexbox
+```
+
+The plugin connects to `http://localhost:8080/mcp`. It does not launch the
+container for you. See the repository README for a remote deployment.
+
 ## Tools
 
 The codexbox MCP tools become available to your agent: `run_prompt` (invoke

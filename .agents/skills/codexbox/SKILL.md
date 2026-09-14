@@ -1,6 +1,6 @@
 ---
 name: codexbox
-description: OpenAI Codex CLI running inside an aicodebox container, put on the network. Exposes seven ways in — interactive shell, one-shot exec, an HTTP REST API (workspace file ops, sync/async prompt runs with run-id polling), an OpenAI-compatible /openai/v1/chat/completions endpoint (streaming, client-executed tools/tool_choice, response_format/JSON-schema), an MCP server (streamable HTTP, mounted at /mcp in API mode or as a sidecar), a Telegram bot, and a cron scheduler that fires codex on a schedule. Auth is bearer-token per surface (CODEXBOX_API_MODE_TOKEN, CODEXBOX_MCP_MODE_TOKEN) plus codex's own OpenAI API-key or ChatGPT-subscription login. Use when the user wants to run OpenAI Codex programmatically over HTTP/MCP/Telegram/cron instead of only in a local terminal, or wants an OpenAI-compatible endpoint backed by Codex.
+description: "Install, configure, or run Codex through the codexbox wrapper, or connect to its HTTP, MCP, Telegram, or cron surfaces."
 homepage: https://github.com/psyb0t/docker-codexbox
 user-invocable: true
 metadata:
@@ -12,6 +12,50 @@ metadata:
 [OpenAI Codex CLI](https://github.com/openai/codex) inside an [aicodebox](https://github.com/psyb0t/docker-aicodebox) container, put on the network. codexbox is aicodebox's `codex` adapter — the HTTP/MCP/Telegram/cron surfaces are aicodebox's, the argv/JSON-event translation is codexbox's.
 
 For installation and configuration, see [references/setup.md](references/setup.md).
+
+## Agent execution
+
+Use `codexbox` when it is on `PATH`. Run it from the workspace the user
+named. Do not assemble a new `docker run` command for routine interactive or
+one-shot work. The wrapper owns the workspace mount, `~/.codex`, SSH state,
+image selection, and session lifecycle.
+
+```bash
+codexbox                                      # interactive Codex TUI
+codexbox exec "inspect this workspace"        # one-shot work
+printf '%s\n' "summarize README.md" | codexbox exec -
+CODEXBOX_FULL=1 codexbox exec "run the full suite"
+```
+
+For a wrapper-started server, prefix container variables with
+`CODEXBOX_ENV_`. For example,
+`CODEXBOX_ENV_CODEXBOX_API_MODE=1 codexbox` passes
+`CODEXBOX_API_MODE=1` into the container. Bare `CODEXBOX_API_MODE` is not
+forwarded and does not start the server.
+
+Start a local API and MCP server only when the user asks for one. Authenticate
+Codex with `codexbox login --device-auth` or `CODEXBOX_ENV_OPENAI_API_KEY`,
+then set the actual model identifiers and distinct bearer tokens:
+
+```bash
+CODEXBOX_ENV_CODEXBOX_API_MODE=1 \
+CODEXBOX_ENV_CODEXBOX_MCP_MODE=1 \
+CODEXBOX_ENV_CODEXBOX_AVAILABLE_MODELS=your-model-id \
+CODEXBOX_ENV_CODEXBOX_API_MODE_TOKEN=your-api-token \
+CODEXBOX_ENV_CODEXBOX_MCP_MODE_TOKEN=your-mcp-token \
+codexbox
+```
+
+Use an HTTP or MCP endpoint only when the user asks for a service or provides
+an already-running remote URL. MCP plugins connect to a server. They do not
+replace the local wrapper.
+
+If `codexbox`, `claudebox`, and `pibox` were installed in the same command
+directory, a box can invoke a sibling command directly. The parent wrapper
+passes the real host paths and the sibling wrapper file. Do not set
+`AICODEBOX_HOST_*`, copy wrapper files, or manually mount another box's state
+directory. If the sibling command is absent, ask the user to install it or to
+choose another approach.
 
 ## Security & safety
 

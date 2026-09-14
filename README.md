@@ -104,11 +104,31 @@ finds sibling wrapper files there and mounts them read-only into the container.
 A sibling wrapper then runs through the host Docker daemon and mounts its own
 host data directory. Codexbox does not directly mount another agent's home.
 
+### Agent use and nested launches
+
+The installed wrapper is the normal interface for people and agents. An agent
+should run `codexbox` from the requested workspace instead of assembling a
+new `docker run` command. The wrapper preserves the workspace path, Codex
+state, SSH state, image choice, and per-workspace container lifecycle.
+
+```bash
+codexbox exec "inspect this workspace and report the failing tests"
+CODEXBOX_FULL=1 codexbox exec "run the full test suite"
+printf '%s\n' "summarize README.md" | codexbox exec -
+```
+
+When one box needs another, install `codexbox`, `claudebox`, and `pibox` in
+the same command directory. A running box can call the sibling command
+directly. The parent wrapper passes the host launch context and mounts only
+the sibling wrapper file. Do not set `AICODEBOX_HOST_*`, copy a wrapper, or
+manually mount another box's state directory.
+
 ### Manual Docker use
 
-Use raw Docker only when you intentionally do not want the wrapper, such as a
-one-shot run or a long-running API service. The [Modes](#modes) section has
-the relevant commands and configuration.
+Use raw Docker only for an explicitly requested container deployment. The
+wrapper is the normal route for interactive, one-shot, and local service use.
+The [Modes](#modes) section has the relevant deployment commands and
+configuration.
 
 ## Image variants
 

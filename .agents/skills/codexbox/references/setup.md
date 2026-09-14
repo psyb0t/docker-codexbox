@@ -8,6 +8,10 @@ See [SKILL.md](../SKILL.md#security--safety) for the full destructive-operation 
 - Codex auth: `OPENAI_API_KEY` (pay-as-you-go) or a ChatGPT Plus/Pro/Team subscription (`codexbox login --device-auth`)
 - Optional: SSH key for git-over-SSH inside the container (the installer generates one)
 
+For ordinary agent work, use the installed `codexbox` command from the target
+workspace. Do not replace it with a hand-written Docker invocation. The
+wrapper handles the workspace, state, SSH, image, and nested launch context.
+
 ## Quick Install (wrapper)
 
 The one-liner installer pulls the image, creates persistent Codex/SSH dirs, and installs the `codexbox` wrapper on `PATH`.
@@ -44,6 +48,16 @@ uses that existing image without rebuilding it.
 
 **Verify:** `codexbox --version` should print the codex CLI version.
 
+```bash
+codexbox                                  # interactive
+codexbox exec "inspect this workspace"    # one-shot
+CODEXBOX_FULL=1 codexbox exec "run tests" # temporary full image
+```
+
+For a wrapper-started server, use `CODEXBOX_ENV_` before every variable that
+must reach the container. For example,
+`CODEXBOX_ENV_CODEXBOX_API_MODE=1 codexbox` starts API mode.
+
 ### Sibling boxes
 
 Install `codexbox`, `claudebox`, and `pibox` in the same command directory,
@@ -62,7 +76,9 @@ runs through the host Docker daemon and mounts its own host data directory.
 
 ## Manual Docker Use
 
-Use raw Docker for one-shot runs or long-running API/Telegram/cron services (the wrapper is meant for the interactive per-directory shell case). All the `docker run` shapes for each mode are in [../SKILL.md](../SKILL.md).
+Use raw Docker only for an explicitly requested container deployment. Use the
+wrapper for interactive, one-shot, and local service runs. All direct Docker
+shapes for service deployment are in [../SKILL.md](../SKILL.md).
 
 Minimal foreground-mode boilerplate:
 

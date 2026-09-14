@@ -4,6 +4,14 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.6.3, 2026-09-14
+
+- Documents the wrapper-first path for interactive, one-shot, full-image, and
+  local API or MCP runs.
+- Documents nested sibling-box launches and the wrapper-managed host context.
+- Makes the bundled agent skill and MCP plugin setup match the actual wrapper
+  behavior, including `CODEXBOX_ENV_*` server settings.
+
 ## v0.6.2, 2026-09-13
 
 - Updates the Codex CLI pin to `0.153.4`.
