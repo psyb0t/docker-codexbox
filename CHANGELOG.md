@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.6.5, 2026-09-23
+
+- Rebuilds both variants on digest-pinned Aicodebox `v0.16.0`.
+- The new base adds the opt-in `stream_options.include_aicodebox_events` option for streaming chat completions. It sends native Codex records as named `aicodebox.native` SSE events. Standard OpenAI chunks are unchanged.
+
 ## v0.6.4, 2026-09-23
 
 - Updates the Codex CLI pin to `0.156.1`.

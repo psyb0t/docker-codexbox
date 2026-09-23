@@ -133,7 +133,7 @@ configuration.
 ## Image variants
 
 - `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
-- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.15.1-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
+- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.16.0-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
 
 `CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
 
