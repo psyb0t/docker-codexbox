@@ -49,7 +49,7 @@ USER root
 # ~/.local/bin, so `command -v codex` there would come up empty and silently
 # skip the API-key seeding. The link is root-owned and points by path, so an
 # update that replaces the target keeps resolving.
-ARG CODEX_VERSION=0.153.4
+ARG CODEX_VERSION=0.156.1
 ENV PATH="/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
         @openai/codex@${CODEX_VERSION} \

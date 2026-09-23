@@ -9,7 +9,7 @@ LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
 
 USER root
 
-ARG CODEX_VERSION=0.153.4
+ARG CODEX_VERSION=0.156.1
 ENV PATH="/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
         @openai/codex@${CODEX_VERSION} \
