@@ -142,7 +142,7 @@ With `CODEXBOX_API_MODE_TOKEN` unset the API surface is unauthenticated — anyo
 | `DELETE` | `/files/{path}` | delete a file (refuses directories — 400) |
 | `POST` | `/openai/v1/chat/completions` | OpenAI-compatible chat endpoint (see below) |
 | `GET` | `/openai/v1/models` | model list from `CODEXBOX_AVAILABLE_MODELS` |
-| `POST` | `/mcp` | MCP server, mounted only when `CODEXBOX_MCP_MODE=1` (see MCP mode) |
+| `POST` | `/mcp/` | MCP server, mounted only when `CODEXBOX_MCP_MODE=1` (see MCP mode) |
 
 `DELETE /files/{path}` removes a workspace file (no undo). Confirm the target path first and only remove files the current task created — see [Security & safety](#security--safety).
 
@@ -202,12 +202,16 @@ Coexists with any foreground mode:
 
 | Foreground | MCP placement |
 |---|---|
-| API mode (`CODEXBOX_API_MODE=1`) | mounted at `/mcp` on the API port — no extra process |
+| API mode (`CODEXBOX_API_MODE=1`) | mounted at `/mcp/` on the API port — no extra process |
 | Telegram / Cron / shell-only | sidecar uvicorn on `CODEXBOX_MCP_MODE_PORT` (default `8081`), served at the process root |
+
+The slashless `/mcp` spelling reaches the same API-mounted handler without a redirect.
 
 Auth: `CODEXBOX_MCP_MODE_TOKEN=<token>` — bearer in `Authorization: Bearer ...`, or `?apiToken=...` for clients that can't set headers. Empty = no auth. **No fallback to `API_MODE_TOKEN`** — MCP has its own bearer, checked independently.
 
-With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is unauthenticated — anyone who can reach `/mcp` or the sidecar port gets run-execution plus full workspace file access. This surface has its own bearer; setting `CODEXBOX_API_MODE_TOKEN` does not protect it. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
+With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is unauthenticated — anyone who can reach `/mcp/` or the sidecar port gets run-execution plus full workspace file access. This surface has its own bearer; setting `CODEXBOX_API_MODE_TOKEN` does not protect it. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
+
+MCP keeps DNS rebinding protection enabled. Loopback hosts and origins work by default; allow a reverse proxy's exact `Host` and browser `Origin` with `CODEXBOX_MCP_MODE_ALLOWED_HOSTS` and `CODEXBOX_MCP_MODE_ALLOWED_ORIGINS` before exposing MCP through it.
 
 ```bash
 docker run -d --name codexbox-api \
@@ -222,7 +226,7 @@ docker run -d --name codexbox-api \
 Wire into an MCP-aware client:
 
 ```bash
-claude mcp add --transport http codexbox http://localhost:8080/mcp \
+claude mcp add --transport http codexbox http://localhost:8080/mcp/ \
   --header "Authorization: Bearer your-mcp-secret"
 ```
 
@@ -293,13 +297,13 @@ jobs:
     thinking: low
 ```
 
-Each run gets a history dir at `CODEXBOX_CRON_MODE_HISTORY_DIR/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt` (plus `telegram.json` when telegram is also configured — the next run's prompt gets a "prior run" hint automatically).
+`CODEXBOX_CRON_MODE_HISTORY_DIR` (default `$HOME/.aicodebox/cron`) is the whole cron state root. Each run gets a history dir at `<root>/history/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt` (plus `telegram.json` when telegram is also configured — the next run's prompt gets a "prior run" hint automatically). A per-job summary jsonl lands at `<root>/<job>.jsonl`. Set a job's `telegram_chat_id` to `0` to opt it out of an inherited root-level notification target; a successful job with an explicit `telegram_chat_id` still posts a notice even when its result text is empty.
 
 ## Auth
 
 Two independent auth layers:
 
-**1. Surface auth** (who can call the HTTP/MCP endpoints): `CODEXBOX_API_MODE_TOKEN` gates `/run`, `/files/*`, `/openai/v1/*`; `CODEXBOX_MCP_MODE_TOKEN` gates `/mcp` (its own bearer, no fallback to the API token). Empty = no auth on that surface.
+**1. Surface auth** (who can call the HTTP/MCP endpoints): `CODEXBOX_API_MODE_TOKEN` gates `/run`, `/files/*`, `/openai/v1/*`; `CODEXBOX_MCP_MODE_TOKEN` gates `/mcp/` (its own bearer, no fallback to the API token). Empty = no auth on that surface.
 
 **2. codex's own upstream auth** (how codex talks to OpenAI): pick one —
   - `OPENAI_API_KEY` — seeded into `$CODEX_HOME/auth.json` on every boot; safe to always set (never overwrites an existing ChatGPT-subscription login).

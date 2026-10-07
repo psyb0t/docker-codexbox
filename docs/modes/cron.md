@@ -16,7 +16,14 @@ jobs:
     telegram_chat_id: -100123
     model: gpt-5.1-codex
     thinking: low
+
+  - name: silent-check
+    schedule: "0 */15 * * * *"
+    instruction: Write the current UTC timestamp to ./status.txt.
+    telegram_chat_id: 0
 ```
+
+Set a job's `telegram_chat_id` to `0` to opt that job out of an inherited root-level `telegram_chat_id`.
 
 ```yaml
 # docker-compose.yml
@@ -41,9 +48,9 @@ top-level `exec` rollout automatically; no cron configuration change is needed.
 
 ## Run history
 
-Each run gets a history dir at `$HOME/.aicodebox/cron/history/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt`. If telegram is configured, `telegram.json` lands there too and the next run's prompt gets a "prior run" hint so codex can reference its own history without you wiring it up.
+`CODEXBOX_CRON_MODE_HISTORY_DIR` (default `$HOME/.aicodebox/cron`) is the whole cron state root. Each run gets a history dir at `<root>/history/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt`. If telegram is configured, `telegram.json` lands there too and the next run's prompt gets a "prior run" hint so codex can reference its own history without you wiring it up. A per-job summary jsonl also lands at `<root>/<job>.jsonl`, and the telegram bot reads its cron→telegram message inbox (`telegram_messages.json`) from the same root.
 
-That path is fixed — the scheduler builds it from `$HOME` and does not read `CODEXBOX_CRON_MODE_HISTORY_DIR`. To relocate run history, mount a volume at `$HOME/.aicodebox/cron`. The env var exists for a narrower job: it tells the telegram bot which directory to read `telegram_messages.json` from, and only matters when telegram and cron run in the same container.
+Setting `CODEXBOX_CRON_MODE_HISTORY_DIR` relocates all of it, so the scheduler and the telegram reply bridge agree on one directory. Mount that directory as a volume to persist history across container recreation.
 
 ## Cron mode environment variables
 
@@ -51,13 +58,13 @@ That path is fixed — the scheduler builds it from `$HOME` and does not read `C
 |-----|---------|---------------|
 | `CODEXBOX_CRON_MODE` | `0` | Boot the cron scheduler (foreground; in-thread when telegram is also on) |
 | `CODEXBOX_CRON_MODE_FILE` | — | Path to the cron yaml |
-| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron` | Directory the **telegram bot** reads the cron→telegram message inbox (`telegram_messages.json`) from. It does **not** move where the scheduler writes run history — see below |
+| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron` | Cron state root, holding run history, job summary jsonl files, and the telegram message inbox |
 
 > Every `CODEXBOX_*` variable is an alias for the `AICODEBOX_*` equivalent read by the base image. If both are set, `AICODEBOX_*` wins.
 
 ## Combined with telegram mode
 
-Setting `CODEXBOX_TELEGRAM_MODE=1` alongside cron is supported — cron then runs in-thread inside telegram, which is what makes `telegram_chat_id` on a job deliver its result to a chat. See [telegram.md](telegram.md).
+Setting `CODEXBOX_TELEGRAM_MODE=1` alongside cron is supported — cron then runs in-thread inside telegram, which is what makes `telegram_chat_id` on a job deliver its result to a chat. A job with an explicit `telegram_chat_id` still notifies on a successful run with empty result text (it posts a "finished (no output)" notice); a run that fails reports the exit code instead. See [telegram.md](telegram.md).
 
 ## Combined with MCP mode
 

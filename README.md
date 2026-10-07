@@ -133,7 +133,7 @@ configuration.
 ## Image variants
 
 - `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
-- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.16.0-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
+- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.17.0-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
 
 `CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
 
@@ -190,7 +190,7 @@ wrapper. Do not set it for an ordinary host launch.
 
 **Foreground modes** (API / Telegram / Cron) are mutually exclusive — except `CODEXBOX_TELEGRAM_MODE=1` + `CODEXBOX_CRON_MODE=1`, which run together (cron in-thread inside telegram). API wins if set alongside anything else.
 
-**MCP mode** (`CODEXBOX_MCP_MODE=1`) is independent — it coexists with whatever foreground mode is running. In API mode it's mounted at `/mcp` on the API port; in other modes it runs as a sidecar uvicorn on its own port.
+**MCP mode** (`CODEXBOX_MCP_MODE=1`) is independent — it coexists with whatever foreground mode is running. In API mode it's mounted at `/mcp/` on the API port; in other modes it runs as a sidecar uvicorn on its own port.
 
 Each mode has its own page with full setup, env vars, and examples.
 
@@ -227,7 +227,7 @@ environment:
 
 ### [MCP Mode →](docs/modes/mcp.md)
 
-Exposes `run_prompt` plus workspace-confined file tools over streamable HTTP, so other agents can drive codex as a tool. Coexists with any foreground mode — mounted at `/mcp` on the API port in API mode, a sidecar on its own port everywhere else. Distinct from codex's own MCP client/server support, which codexbox does not wire up.
+Exposes `run_prompt` plus workspace-confined file tools over streamable HTTP, so other agents can drive codex as a tool. Coexists with any foreground mode — mounted at `/mcp/` on the API port in API mode, served at its own port root everywhere else. Distinct from codex's own MCP client/server support, which codexbox does not wire up.
 
 ```yaml
 environment:
@@ -248,7 +248,7 @@ The image is built on top of [aicodebox](https://github.com/psyb0t/docker-aicode
 | `CODEXBOX_API_MODE` | `0` | Boot the HTTP API server (foreground) |
 | `CODEXBOX_TELEGRAM_MODE` | `0` | Boot the Telegram bot (foreground) |
 | `CODEXBOX_CRON_MODE` | `0` | Boot the cron scheduler (foreground; in-thread when telegram is also on) |
-| `CODEXBOX_MCP_MODE` | `0` | Expose MCP — mounted at `/mcp` in API mode, or as a sidecar elsewhere |
+| `CODEXBOX_MCP_MODE` | `0` | Expose MCP — mounted at `/mcp/` in API mode, or as a sidecar elsewhere |
 
 Each mode's own knobs (ports, tokens, config paths, history dirs) live on that mode's page: [api.md](docs/modes/api.md), [telegram.md](docs/modes/telegram.md), [cron.md](docs/modes/cron.md), [mcp.md](docs/modes/mcp.md).
 
@@ -261,6 +261,12 @@ Each mode's own knobs (ports, tokens, config paths, history dirs) live on that m
 | `CODEXBOX_AVAILABLE_MODELS` | — | **Required for API mode.** CSV list returned by `/openai/v1/models` and shown in the telegram `/model` picker. API mode refuses to boot without it; telegram `/model` picker degrades to a "set this env var" reply. |
 | `CODEXBOX_AVAILABLE_EFFORTS` | `none,minimal,low,medium,high,xhigh,max` | Override the effort/reasoning list shown by the telegram `/effort` picker (comma-separated) |
 | `CODEXBOX_MODEL` | — | Default model passed to codex (`-m/--model`) when a caller doesn't specify one |
+
+### Init scripts and user bin
+
+`$HOME/.aicodebox/bin` is on `PATH` ahead of everything else, for codex itself, for init scripts, and for `docker exec` shells. Drop your own scripts there.
+
+`$HOME/.aicodebox/init.d/*.sh` run once per container, after the image's own `/aicodebox-init.d/*.sh`, as `aicode` with passwordless sudo. A failing script is logged and the rest still run. Bind-mount `$HOME/.aicodebox` to supply either directory. A fresh container runs init again even against a previously used `$HOME/.aicodebox`, so your scripts need to be safe to repeat.
 
 ## Auth
 

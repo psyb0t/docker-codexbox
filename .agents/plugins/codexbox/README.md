@@ -6,7 +6,8 @@ Codex CLI running inside an aicodebox container) over the
 [Model Context Protocol](https://modelcontextprotocol.io).
 
 codexbox, when started with `CODEXBOX_MCP_MODE=1`, serves a Streamable-HTTP
-MCP endpoint at `/mcp`. This package is a thin stdio↔HTTP bridge (via
+MCP endpoint at `/mcp/` (the slashless `/mcp` reaches the same handler
+without a redirect). This package is a thin stdio↔HTTP bridge (via
 [`mcp-remote`](https://www.npmjs.com/package/mcp-remote)) for MCP clients that
 speak local stdio servers — it forwards everything to your running codexbox
 instance and authenticates with your bearer token when the server requires one.
@@ -30,7 +31,7 @@ CODEXBOX_ENV_CODEXBOX_MCP_MODE_TOKEN=your-mcp-token \
 codexbox
 ```
 
-The plugin connects to `http://localhost:8080/mcp`. It does not launch the
+The plugin connects to `http://localhost:8080/mcp/`. It does not launch the
 container for you. See the repository README for a remote deployment.
 
 ## Tools
@@ -43,7 +44,7 @@ Codex on the box and get its textual response), `list_files`, `read_file`,
 
 | Env var | Required | Description |
 |---|---|---|
-| `CODEXBOX_URL` | yes | Base URL of your running codexbox server, e.g. `http://localhost:8080`. The bridge appends `/mcp`. |
+| `CODEXBOX_URL` | yes | Base URL of your running codexbox server, e.g. `http://localhost:8080`. The bridge appends `/mcp/`. |
 | `CODEXBOX_MCP_MODE_TOKEN` | no | Bearer token — only if the codexbox server was started with `CODEXBOX_MCP_MODE_TOKEN` set. |
 
 ## Install
@@ -61,7 +62,7 @@ auth) in the plugin's environment.
 
 If your MCP client already supports **remote** Streamable-HTTP servers, you
 don't need this bridge — point the client straight at
-`$CODEXBOX_URL/mcp` with an `Authorization: Bearer <token>` header.
+`$CODEXBOX_URL/mcp/` with an `Authorization: Bearer <token>` header.
 
 ## License
 

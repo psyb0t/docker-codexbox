@@ -7,7 +7,7 @@
 # NOTE on hardening: the base sets `aicode` (UID 1000) as its runtime user via
 # `setpriv` inside `aicodebox-entrypoint`. This Dockerfile switches to root
 # only for the install steps below; runtime drops back to aicode automatically.
-ARG BASE_IMAGE=psyb0t/aicodebox:v0.16.0@sha256:66f4f9cf8a97ece9c8633722cf5d6f410fd8ef600586dc3abbcfa658feb2c8d0
+ARG BASE_IMAGE=psyb0t/aicodebox:v0.17.0@sha256:c75a87509d4cb40f18b85e883244c34bc77bca6e48519753b9658b25c6c31d2f
 FROM ${BASE_IMAGE}
 
 # MCP Registry ownership label — identifies this image as the OCI package for
@@ -50,7 +50,8 @@ USER root
 # skip the API-key seeding. The link is root-owned and points by path, so an
 # update that replaces the target keeps resolving.
 ARG CODEX_VERSION=0.156.1
-ENV PATH="/home/aicode/.local/bin:${PATH}"
+# The state dir's bin/ stays first, matching the PATH the base entrypoint sets.
+ENV PATH="/home/aicode/.aicodebox/bin:/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
         @openai/codex@${CODEX_VERSION} \
     && printf 'prefix=/home/aicode/.local\n' > /home/aicode/.npmrc \
@@ -62,8 +63,8 @@ RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \
 COPY codexbox /opt/codexbox
 RUN uv pip install --system --break-system-packages --no-deps /opt/codexbox
 
-# First-run init scripts — base runs each once, marks completion at
-# ~/.aicodebox/.init-done, then skips on subsequent boots.
+# Init scripts. The base runs them once per container, the first time it
+# starts, then the user's ~/.aicodebox/init.d/*.sh.
 COPY codexbox/init.d/ /aicodebox-init.d/
 RUN chmod +x /aicodebox-init.d/*.sh
 

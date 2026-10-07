@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // codexbox MCP bridge. A thin stdio<->HTTP proxy: forwards MCP over stdio to a
-// running codexbox server's Streamable-HTTP endpoint (`$CODEXBOX_URL/mcp`),
+// running codexbox server's Streamable-HTTP endpoint (`$CODEXBOX_URL/mcp/`),
 // authenticating with `$CODEXBOX_MCP_MODE_TOKEN` when the server requires it.
 //
 // stdout IS the MCP protocol channel, so diagnostics go to stderr only — the
@@ -11,7 +11,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 
-const MCP_PATH = "/mcp";
+const MCP_PATH = "/mcp/";
 
 const base = process.env.CODEXBOX_URL;
 

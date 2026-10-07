@@ -119,7 +119,7 @@ Naming convention: `CODEXBOX_<MODE>_MODE=1` is the on/off flag, `CODEXBOX_<MODE>
 | `CODEXBOX_API_MODE` | `0` | Boot the HTTP API server (foreground) |
 | `CODEXBOX_TELEGRAM_MODE` | `0` | Boot the Telegram bot (foreground) |
 | `CODEXBOX_CRON_MODE` | `0` | Boot the cron scheduler (foreground; in-thread when telegram is also on) |
-| `CODEXBOX_MCP_MODE` | `0` | Expose MCP — mounted at `/mcp` in API mode, or as a standalone sidecar elsewhere |
+| `CODEXBOX_MCP_MODE` | `0` | Expose MCP — mounted at `/mcp/` in API mode, or as a standalone sidecar elsewhere |
 
 Foreground modes (API/Telegram/Cron) are mutually exclusive, except Telegram+Cron together (cron runs in-thread inside the telegram process). API wins if set alongside anything else. MCP mode is independent — it coexists with whatever foreground mode is running, or with none at all (shell-only + MCP sidecar).
 
@@ -145,7 +145,7 @@ With `CODEXBOX_API_MODE_TOKEN` unset the API surface (`/run`, `/files/*`, `/open
 | Var | Default | What it does |
 |---|---|---|
 | `CODEXBOX_CRON_MODE_FILE` | — | Path to the cron YAML |
-| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron/history` | Where cron writes per-run history dirs (`meta.json`, `stdout.log`, `stderr.log`, `result.txt`, `telegram.json`) |
+| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron` | Cron state root. Run history lands under `<root>/history/<workspace>/<timestamp>-<job>/` (`meta.json`, `stdout.log`, `stderr.log`, `result.txt`, `telegram.json`), per-job summaries at `<root>/<job>.jsonl`, and the telegram reply inbox at `<root>/telegram_messages.json` |
 
 ### MCP mode config
 
@@ -153,8 +153,12 @@ With `CODEXBOX_API_MODE_TOKEN` unset the API surface (`/run`, `/files/*`, `/open
 |---|---|---|
 | `CODEXBOX_MCP_MODE_PORT` | `8081` | Port the sidecar MCP server binds to (ignored when mounted inside API mode) |
 | `CODEXBOX_MCP_MODE_TOKEN` | empty | Bearer token for MCP. Empty = no auth. No fallback to `API_MODE_TOKEN` |
+| `CODEXBOX_MCP_MODE_ALLOWED_HOSTS` | loopback hosts | Comma-separated MCP `Host` allowlist. Add each reverse-proxy host name |
+| `CODEXBOX_MCP_MODE_ALLOWED_ORIGINS` | loopback HTTP origins | Comma-separated MCP browser Origin allowlist. Add each reverse-proxy origin |
 
 With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`, `read_file`, `write_file`, `delete_file`) is unauthenticated — anyone who can reach it gets full workspace file access. This surface has its own bearer; setting `CODEXBOX_API_MODE_TOKEN` does not protect it. Set the token and bind to loopback / behind an authenticating proxy before exposing it beyond localhost.
+
+MCP also keeps DNS rebinding protection enabled. Loopback hosts and origins work by default; a reverse proxy, tunnel, or public DNS name needs its exact `CODEXBOX_MCP_MODE_ALLOWED_HOSTS` and browser `CODEXBOX_MCP_MODE_ALLOWED_ORIGINS` values added before MCP is reachable through it.
 
 ### Workspace & runtime
 
@@ -168,11 +172,15 @@ With `CODEXBOX_MCP_MODE_TOKEN` unset the MCP surface (`run_prompt`, `list_files`
 
 Every `CODEXBOX_X` name above also works as `AICODEBOX_X` (the base image's native naming) — the entrypoint translates `CODEXBOX_X` to `AICODEBOX_X` when only the codexbox-prefixed one is set. If both are set, `AICODEBOX_X` wins.
 
+### Init scripts and user bin
+
+`$HOME/.aicodebox/bin` is on `PATH` ahead of everything else, for codex, for init scripts, and for `docker exec` shells. `$HOME/.aicodebox/init.d/*.sh` run once per container, after the image's own `/aicodebox-init.d/*.sh`, as `aicode` with passwordless sudo; a failing script is logged and the rest still run. Init now runs once per container rather than once per bind-mounted state directory, so scripts placed there need to tolerate re-running on every new container.
+
 ## Ports
 
 | Port | Default var | Service |
 |---|---|---|
-| 8080 | `CODEXBOX_API_MODE_PORT` | HTTP API (`/run`, `/files`, `/openai/v1/*`) + MCP mounted at `/mcp` when `CODEXBOX_MCP_MODE=1` |
+| 8080 | `CODEXBOX_API_MODE_PORT` | HTTP API (`/run`, `/files`, `/openai/v1/*`) + MCP mounted at `/mcp/` when `CODEXBOX_MCP_MODE=1` |
 | 8081 | `CODEXBOX_MCP_MODE_PORT` | Standalone MCP sidecar — only when MCP mode is on and API mode is not |
 
 No port is exposed by default in Telegram-only or cron-only or shell-only deployments (they're outbound-only / no HTTP surface unless MCP mode is also enabled).
