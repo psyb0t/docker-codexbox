@@ -336,7 +336,7 @@ The canonical `/run` knobs are honored — codex just exposes them differently t
 
 ## Agent integrations
 
-The [skill](.agents/skills/codexbox) works in any agent that reads `.agents/skills/`, and installs natively in the clients below.
+The [skill](.agents/skills/codexbox) works in any agent that reads `.agents/skills/` (such as [peen](https://github.com/psyb0t/peen)), and installs natively in the clients below.
 
 ### Claude Code
 
