@@ -9,7 +9,7 @@ LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"
 
 USER root
 
-ARG CODEX_VERSION=0.156.1
+ARG CODEX_VERSION=0.162.1
 # The state dir's bin/ stays first, matching the PATH the base entrypoint sets.
 ENV PATH="/home/aicode/.aicodebox/bin:/home/aicode/.local/bin:${PATH}"
 RUN npm install -g --prefix /home/aicode/.local --no-audit --no-fund \

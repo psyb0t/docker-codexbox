@@ -11,7 +11,7 @@ TAG        := v$(VERSION)
 # Override only to test a deliberately selected local fork.
 BASE_IMAGE ?= psyb0t/aicodebox:v0.17.0@sha256:c75a87509d4cb40f18b85e883244c34bc77bca6e48519753b9658b25c6c31d2f
 FULL_BASE_IMAGE ?= psyb0t/aicodebox:v0.17.0-full@sha256:b217c509b18a04c4d9bf370d46dee4053c49fbdf872c8075b9a888ecd9eec9d9
-CODEX_VERSION ?= 0.156.1
+CODEX_VERSION ?= 0.162.1
 
 .PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested clean help version pkg-lock
 
