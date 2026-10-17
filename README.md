@@ -123,6 +123,14 @@ directly. The parent wrapper passes the host launch context and mounts only
 the sibling wrapper file. Do not set `AICODEBOX_HOST_*`, copy a wrapper, or
 manually mount another box's state directory.
 
+The wrapper does not forward an SSH agent on its own. To give the box your agent, mount its socket and point `SSH_AUTH_SOCK` at it:
+
+```bash
+CODEXBOX_MOUNT_SSH="$SSH_AUTH_SOCK:/ssh-agent:ro" CODEXBOX_ENV_SSH_AUTH_SOCK=/ssh-agent codexbox
+```
+
+Every key loaded in that agent becomes usable inside the box.
+
 ### Manual Docker use
 
 Use raw Docker only for an explicitly requested container deployment. The
@@ -170,7 +178,7 @@ Set these on the host before running `codexbox`:
 | `CODEXBOX_IMAGE` | installed image | Override the image the wrapper runs |
 | `CODEXBOX_FULL` | installed choice (`0` initially) | `0` forces minimal; `1` forces full |
 | `CODEXBOX_DATA_DIR` | `~/.codex` | Host dir mounted as `CODEX_HOME` (auth + config + sessions) |
-| `CODEXBOX_SSH_DIR` | `~/.ssh/codexbox` | SSH key dir mounted into the container (for git over SSH) |
+| `CODEXBOX_SSH_DIR` | `~/.ssh/codexbox` | SSH key directory mounted into the container (for git over SSH) |
 | `CODEXBOX_MAX_MEM` | `10g` | Per-container memory limit |
 | `CODEXBOX_CONTAINER_NAME` | derived from `$PWD` | Override the per-workspace container name |
 | `CODEXBOX_ENV_*` | — | Forward arbitrary env into the container (prefix stripped: `CODEXBOX_ENV_FOO=bar` → `FOO=bar`) |

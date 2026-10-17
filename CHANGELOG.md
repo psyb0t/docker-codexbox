@@ -4,6 +4,11 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.3, 2026-10-17
+
+- Documentation only. The README says the wrapper does not forward an SSH agent by default and shows how to mount one explicitly with `CODEXBOX_MOUNT_SSH` and `CODEXBOX_ENV_SSH_AUTH_SOCK`.
+- The `CODEXBOX_SSH_DIR` table row says "directory" instead of "dir".
+
 ## v0.7.2, 2026-10-12
 
 - Updates the Codex CLI pin to `0.162.1` in both image variants and the local Make build path.
