@@ -143,7 +143,7 @@ configuration.
 - `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
 - `psyb0t/codexbox:latest-full` starts from the shared `aicodebox:latest-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
 
-`CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
+`CODEXBOX_FULL` is binary: the installer defaults to minimal, `0` selects minimal, and `1` selects full. At runtime, an unset value preserves the installed image choice. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
 
 The full image adds:
 
@@ -168,6 +168,10 @@ yourself before using `latest-full`. Full breakdown in
 [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ### Wrapper environment variables
+
+Set `CODEXBOX_GIT_NAME` and `CODEXBOX_GIT_EMAIL` on the host to configure the runtime user's global Git identity before startup hooks. Direct container deployments accept the same names. Nonempty `AICODEBOX_GIT_NAME` and `AICODEBOX_GIT_EMAIL` inside the container take precedence; through the wrapper, supply those shared values as `AICODEBOX_ENV_AICODEBOX_GIT_NAME` and `AICODEBOX_ENV_AICODEBOX_GIT_EMAIL`. Empty settings preserve existing Git config. Multiline values are rejected.
+
+`make version V=X.Y.Z` synchronizes package metadata, lockfile, the Codex plugin manifest, and the installer's wrapper release ref without committing or tagging. Remote installs download the matching release wrapper unless `CODEXBOX_INSTALL_REF` overrides it. Updating an image does not update an installed wrapper.
 
 Set these on the host before running `codexbox`:
 

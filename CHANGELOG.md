@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.5, 2026-10-20
+
+- Keeps the remote installer's wrapper ref aligned with the release version. Version updates synchronize package, lockfile, plugin manifest, and installer ref without committing or tagging.
+- Applies `CODEXBOX_GIT_NAME` and `CODEXBOX_GIT_EMAIL` through the shared runtime startup path, with explicit Aicodebox values taking precedence.
+- Rejects invalid `CODEXBOX_FULL` values even when an explicit image override is supplied.
+- Adds installer-ref and Git-identity regression checks and isolates wrapper tests from inherited host-launch settings.
+
 ## v0.7.4, 2026-10-19
 
 - Both image variants follow Aicodebox `latest` or `latest-full`, bringing Python 3.14.8 and Node 24.21.0. The full variant includes Go 1.27.2.

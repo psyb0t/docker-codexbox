@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+for launch_var in "${!AICODEBOX_HOST_@}"; do
+    unset "$launch_var"
+done
+unset AICODEBOX_LAUNCH_CONTEXT_VERSION CODEXBOX_SRC_LOCAL CODEXBOX_INSTALL_REF
+
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly TEST_DIR
 # shellcheck source=common.sh
@@ -121,6 +126,12 @@ if CODEXBOX_FULL=2 CODEXBOX_DATA_DIR="$TMPROOT/codex" \
     CODEXBOX_SSH_DIR="$TMPROOT/ssh" PATH="$FAKEBIN:$PATH" \
     bash "$WRAPPER" exec "hi" >/dev/null 2>&1; then
     fail "wrapper accepted invalid CODEXBOX_FULL=2"
+fi
+
+if CODEXBOX_FULL=2 CODEXBOX_IMAGE="$OVERRIDE_IMAGE" \
+    CODEXBOX_DATA_DIR="$TMPROOT/codex" CODEXBOX_SSH_DIR="$TMPROOT/ssh" \
+    PATH="$FAKEBIN:$PATH" bash "$WRAPPER" exec hi >/dev/null 2>&1; then
+    fail "explicit image bypassed CODEXBOX_FULL validation"
 fi
 
 log INFO "all image-selection tests passed"

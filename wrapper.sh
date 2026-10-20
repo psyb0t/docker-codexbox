@@ -35,17 +35,15 @@ dbg() {
 }
 
 CODEX_IMAGE="${CODEXBOX_IMAGE:-}"
-if [ -z "$CODEX_IMAGE" ]; then
-    case "${CODEXBOX_FULL:-}" in
-        "") CODEX_IMAGE="$CODEXBOX_INSTALLED_IMAGE" ;;
-        0) CODEX_IMAGE="psyb0t/codexbox:latest" ;;
-        1) CODEX_IMAGE="psyb0t/codexbox:latest-full" ;;
-        *)
-            echo "❌ CODEXBOX_FULL must be 0 or 1" >&2
-            exit 1
-            ;;
-    esac
-fi
+case "${CODEXBOX_FULL:-}" in
+    "") CODEX_IMAGE="${CODEX_IMAGE:-$CODEXBOX_INSTALLED_IMAGE}" ;;
+    0) CODEX_IMAGE="${CODEX_IMAGE:-psyb0t/codexbox:latest}" ;;
+    1) CODEX_IMAGE="${CODEX_IMAGE:-psyb0t/codexbox:latest-full}" ;;
+    *)
+        echo "CODEXBOX_FULL must be 0 or 1" >&2
+        exit 1
+        ;;
+esac
 HOST_HOME="${AICODEBOX_HOST_HOME:-$HOME}"
 HOST_WORKSPACE="$PWD"
 CODEX_DIR="${CODEXBOX_DATA_DIR:-${AICODEBOX_HOST_CODEX_HOME:-$HOST_HOME/.codex}}"
@@ -75,6 +73,8 @@ dbg "container_name=$container_name CODEX_DIR=$CODEX_DIR PWD=$PWD"
 
 DOCKER_ARGS=(
     --network host
+    -e "CODEXBOX_GIT_NAME=${CODEXBOX_GIT_NAME:-}"
+    -e "CODEXBOX_GIT_EMAIL=${CODEXBOX_GIT_EMAIL:-}"
     -e CODEXBOX_WORKSPACE="$HOST_WORKSPACE"
     -e CODEXBOX_CONTAINER_NAME="$container_name"
     -e AICODEBOX_LAUNCH_CONTEXT_VERSION=1
