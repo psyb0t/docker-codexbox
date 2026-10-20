@@ -4,6 +4,14 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.4, 2026-10-19
+
+- Both image variants follow Aicodebox `latest` or `latest-full`, bringing Python 3.14.8 and Node 24.21.0. The full variant includes Go 1.27.2.
+- Updates the plugin's mcp-remote bridge to 0.14.3. Pins the Python development tools, refreshes their lockfile and adds `make test-unit`.
+- Updates full-image version checks and excludes local release receipts from build contexts.
+- Default-branch pushes build both image variants and publish per-commit SHA tags. Release tags wait for that same commit's successful default-branch run, then promote its images without rebuilding and create the GitHub release from the annotated tag notes.
+- Spreads scheduled issue polling across repository-specific hours.
+
 ## v0.7.3, 2026-10-17
 
 - Documentation only. The README says the wrapper does not forward an SSH agent by default and shows how to mount one explicitly with `CODEXBOX_MOUNT_SSH` and `CODEXBOX_ENV_SSH_AUTH_SOCK`.

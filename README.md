@@ -141,21 +141,21 @@ configuration.
 ## Image variants
 
 - `psyb0t/codexbox:latest` is the default minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq`, and `curl`.
-- `psyb0t/codexbox:latest-full` starts from the immutable `aicodebox:v0.17.0-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
+- `psyb0t/codexbox:latest-full` starts from the shared `aicodebox:latest-full` base, then adds Codexbox's adapter, entrypoint, auth, and config.
 
 `CODEXBOX_FULL` is binary: unset or `0` selects minimal; `1` selects full. Any other value fails. The installer writes the resolved image into the installed wrapper, so the choice persists without exporting the variable on every run. A runtime `CODEXBOX_FULL=0` or `CODEXBOX_FULL=1` temporarily forces a variant; `CODEXBOX_IMAGE` remains the highest-priority explicit override.
 
 The full image adds:
 
-- Go 1.26.8 with gopls, Delve, golangci-lint, staticcheck, gofumpt, and test/code-generation helpers
-- Python 3.14.7 with pytest, Black, Flake8, mypy, Pyright, Poetry, Pipenv, and common HTTP/parsing libraries
+- Go 1.27.2 with gopls, Delve, golangci-lint, staticcheck, gofumpt, and test/code-generation helpers
+- Python 3.14.8 with pytest, Black, Flake8, mypy, Pyright, Poetry, Pipenv, and common HTTP/parsing libraries
 - JavaScript and TypeScript linting, formatting, process, framework, API-test, static-server, Lighthouse, and Storybook CLIs
 - GitHub CLI, Terraform, kubectl, and Helm
 - Build tools, CMake, ClangFormat, Valgrind, GDB, strace, and ltrace
 - PostgreSQL, MySQL, SQLite, and Redis clients
 - Vim, Nano, tmux, htop, archive tools, network diagnostics, ripgrep, fd, bat, eza, shellcheck, and shfmt
 
-The full variant is pinned to the released Aicodebox full manifest. Aicodebox
+The full variant inherits the shared Aicodebox full image. Aicodebox
 owns the shared toolchain pins, locks, and supply-chain checks. Codexbox adds
 only its agent package and startup layer.
 

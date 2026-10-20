@@ -7,7 +7,7 @@
 # NOTE on hardening: the base sets `aicode` (UID 1000) as its runtime user via
 # `setpriv` inside `aicodebox-entrypoint`. This Dockerfile switches to root
 # only for the install steps below; runtime drops back to aicode automatically.
-ARG BASE_IMAGE=psyb0t/aicodebox:v0.17.0@sha256:c75a87509d4cb40f18b85e883244c34bc77bca6e48519753b9658b25c6c31d2f
+ARG BASE_IMAGE=psyb0t/aicodebox:latest
 FROM ${BASE_IMAGE}
 
 # MCP Registry ownership label — identifies this image as the OCI package for

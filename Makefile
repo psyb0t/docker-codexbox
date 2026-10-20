@@ -7,10 +7,10 @@ PKG        := codexbox
 # one-offs: `VERSION=0.10.1-rc1 make build`.
 VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyproject.toml)
 TAG        := v$(VERSION)
-# Published base image pinned to its immutable multi-architecture manifest.
+# Shared first-party base images follow their published latest variants.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:v0.17.0@sha256:c75a87509d4cb40f18b85e883244c34bc77bca6e48519753b9658b25c6c31d2f
-FULL_BASE_IMAGE ?= psyb0t/aicodebox:v0.17.0-full@sha256:b217c509b18a04c4d9bf370d46dee4053c49fbdf872c8075b9a888ecd9eec9d9
+BASE_IMAGE ?= psyb0t/aicodebox:latest
+FULL_BASE_IMAGE ?= psyb0t/aicodebox:latest-full
 CODEX_VERSION ?= 0.162.1
 
 .PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested clean help version pkg-lock
@@ -103,3 +103,7 @@ clean: ## Remove built images (keeps the published base)
 
 help: ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: test-unit
+test-unit: ## Run adapter unit tests with locked dependencies
+	cd codexbox && uv run --frozen python -m pytest tests/ -v

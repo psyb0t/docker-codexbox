@@ -2,7 +2,7 @@
 #
 # Generic development tooling belongs to aicodebox. This image adds only
 # Codex, the codexbox adapter, and Codex-specific startup behavior.
-ARG BASE_IMAGE=psyb0t/aicodebox:v0.17.0-full@sha256:b217c509b18a04c4d9bf370d46dee4053c49fbdf872c8075b9a888ecd9eec9d9
+ARG BASE_IMAGE=psyb0t/aicodebox:latest-full
 FROM ${BASE_IMAGE}
 
 LABEL io.modelcontextprotocol.server.name="io.github.psyb0t/codexbox"

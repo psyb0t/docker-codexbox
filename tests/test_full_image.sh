@@ -18,8 +18,8 @@ docker run --rm --entrypoint /bin/bash "$IMAGE" -lc '
 
     [ "${CODEXBOX_IMAGE_VARIANT:-}" = "full" ]
     codex --version
-    go version | grep -F "go1.26.8"
-    python --version 2>&1 | grep -F "Python 3.14.7"
+    go version | grep -F "go1.27.2"
+    python --version 2>&1 | grep -F "Python 3.14.8"
 
     tools=(
         go gofmt golangci-lint gopls dlv staticcheck gomodifytags impl gotests gofumpt
