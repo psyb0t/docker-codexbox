@@ -11,9 +11,7 @@
 .agent_knowledge/
 
 # Local tooling / scratch — never commit
-AGENTS.md
 CODEX.local.md
-CLAUDE.md
 ANUSTIMES.md
 PLAN.md
 implplan.md
@@ -50,7 +48,10 @@ profile.out
 .cover/
 htmlcov/
 
-# Per-run orchestration scaffolding — never commit
+# Per-run orchestration scaffolding, never commit (.testing/ also holds the docs build in .testing/docs-site)
 .plan-and-delegate/
 .testing/
 .secaudit/
+
+# Local config overrides at any depth
+*.local.json

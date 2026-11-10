@@ -62,7 +62,7 @@ CURRENT_LOG_FILE=""
 _begin_test_log() {
     local name="$1"
     CURRENT_LOG_FILE="${TEST_LOG_DIR:-/tmp}/${name}.log"
-    : > "$CURRENT_LOG_FILE"
+    : >"$CURRENT_LOG_FILE"
     export CURRENT_LOG_FILE
 }
 
@@ -99,8 +99,8 @@ setup() {
 
     echo "building codexbox image ($IMAGE) on top of $BASE_IMAGE..."
     if ! docker build --build-arg "BASE_IMAGE=$BASE_IMAGE" \
-            -t "$IMAGE" "$WORKDIR" \
-            >"$TEST_LOG_DIR/build.log" 2>&1; then
+        -t "$IMAGE" "$WORKDIR" \
+        >"$TEST_LOG_DIR/build.log" 2>&1; then
         echo "❌ codexbox image build failed; see $TEST_LOG_DIR/build.log" >&2
         tail -50 "$TEST_LOG_DIR/build.log" >&2
         exit 1

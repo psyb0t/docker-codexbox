@@ -3,7 +3,7 @@
 // running codexbox server's Streamable-HTTP endpoint (`$CODEXBOX_URL/mcp/`),
 // authenticating with `$CODEXBOX_MCP_MODE_TOKEN` when the server requires it.
 //
-// stdout IS the MCP protocol channel, so diagnostics go to stderr only — the
+// stdout IS the MCP protocol channel, so diagnostics go to stderr only. The
 // sole output here is a fatal pre-launch console.error (user-facing CLI
 // output). The token is passed to the proxy as an argv header, never logged.
 import { spawnSync } from "node:child_process";
@@ -22,7 +22,7 @@ if (!base) {
 Point this bridge at your running codexbox server, e.g.:
   export CODEXBOX_URL=http://localhost:8080
 
-codexbox is self-hosted — see https://github.com/psyb0t/docker-codexbox`,
+codexbox is self-hosted, see https://github.com/psyb0t/docker-codexbox`,
   );
   process.exit(1);
 }

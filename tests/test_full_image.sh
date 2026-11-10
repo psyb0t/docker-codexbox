@@ -9,8 +9,8 @@ source "$TEST_DIR/common.sh"
 readonly IMAGE="${IMAGE:-psyb0t/codexbox:latest-full}"
 
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-	log ERROR "image not found: $IMAGE"
-	exit 1
+    log ERROR "image not found: $IMAGE"
+    exit 1
 fi
 
 docker run --rm --entrypoint /bin/bash "$IMAGE" -lc '

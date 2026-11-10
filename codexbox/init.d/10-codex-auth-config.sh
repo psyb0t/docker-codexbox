@@ -60,6 +60,6 @@ if [ ! -f "$CONFIG_TOML" ] || ! grep -qF "[projects.\"$WORKSPACE_DIR\"]" "$CONFI
         if [ -n "${CODEXBOX_REASONING_EFFORT:-}" ]; then
             printf 'model_reasoning_effort = "%s"\n' "$CODEXBOX_REASONING_EFFORT"
         fi
-    } >> "$CONFIG_TOML"
+    } >>"$CONFIG_TOML"
     chmod 600 "$CONFIG_TOML"
 fi

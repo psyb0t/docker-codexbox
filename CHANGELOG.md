@@ -4,6 +4,12 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.7, 2026-11-10
+
+- Publishes the documentation at https://psyb0t.github.io/docker-codexbox/ and moves the reference material out of the README into it. Corrects `CODEXBOX_MODEL`: it is written once into the workspace's project entry in the Codex configuration and does not set the default model for runs. Adds the missing `eventMode` and `outputFormat` fields to the skill's `/run` example.
+- Runs shellcheck, shfmt, ruff, pyright and the credential-free tests on every branch push, in containers. Formats the shell scripts with shfmt.
+- Adds Buy Me a Coffee to the funding links, and commits `AGENTS.md` and the project rules in `.agents/rules/` for coding agents.
+
 ## v0.7.6, 2026-10-22
 
 - Refreshes the Aicodebox runtime to v0.18.2, including workspace and Docker socket identity collision fixes. Both variants continue to follow the shared `latest` and `latest-full` images.

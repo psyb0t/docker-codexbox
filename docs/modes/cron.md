@@ -1,6 +1,13 @@
-# Cron Mode
+---
+title: "Cron mode"
+description: "Schedule Codex jobs with codexbox cron mode: the YAML job file, 6-field schedules, run history, session continuity and Telegram delivery."
+nav_order: 3
+parent: "Modes"
+---
 
-`CODEXBOX_CRON_MODE=1` + `CODEXBOX_CRON_MODE_FILE=/path/to/cron.yaml`. YAML-defined scheduled jobs — 6-field schedules via croniter. Each job fires codex with the given instruction.
+# Cron mode
+
+`CODEXBOX_CRON_MODE=1` with `CODEXBOX_CRON_MODE_FILE=/path/to/cron.yaml` runs jobs from a YAML file on 6-field schedules, parsed by croniter. Each job runs Codex with its instruction.
 
 ## Setup
 
@@ -23,7 +30,7 @@ jobs:
     telegram_chat_id: 0
 ```
 
-Set a job's `telegram_chat_id` to `0` to opt that job out of an inherited root-level `telegram_chat_id`.
+The schedule has six fields with seconds first, so `"0 0 9 * * 1-5"` is 09:00:00 on weekdays. Set a job's `telegram_chat_id` to `0` to opt it out of a root-level `telegram_chat_id`.
 
 ```yaml
 # docker-compose.yml
@@ -33,39 +40,48 @@ services:
     environment:
       - CODEXBOX_CRON_MODE=1
       - CODEXBOX_CRON_MODE_FILE=/home/aicode/.aicodebox/cron.yaml
+      - OPENAI_API_KEY=sk-...
     volumes:
       - ~/.aicodebox:/home/aicode/.aicodebox
       - ~/workspaces:/workspace
 ```
 
-The schedule field is 6-field (seconds first), so `"0 0 9 * * 1-5"` is 09:00:00 on weekdays.
+From your current directory, the [wrapper](../wrapper.md#cron-through-the-wrapper) starts the same thing as a background container:
 
-Each job workspace keeps one top-level Codex `exec` session across ticks.
-Codexbox records that root's exact ID and resumes it directly instead of using
-Codex's unfiltered `resume --last`, which can select a newer subagent rollout
-that cannot accept a cron turn. Existing job workspaces migrate their newest
-top-level `exec` rollout automatically; no cron configuration change is needed.
+```bash
+CODEXBOX_MODE_CRON=1 \
+CODEXBOX_MODE_CRON_FILE="$PWD/cron.yaml" \
+codexbox
+```
+
+## Sessions
+
+Each job workspace keeps one top-level Codex `exec` session across runs. codexbox records that session's exact ID and resumes it directly, instead of Codex's `resume --last`, which can pick a newer subagent rollout that cannot take a cron turn. Workspaces from older versions take over their newest top-level `exec` rollout automatically. [Codex adapter](../codex-adapter.md#session-continuation) has the details.
 
 ## Run history
 
-`CODEXBOX_CRON_MODE_HISTORY_DIR` (default `$HOME/.aicodebox/cron`) is the whole cron state root. Each run gets a history dir at `<root>/history/<workspace>/<timestamp>-<job>/` with `meta.json`, `stdout.log`, `stderr.log`, `result.txt`. If telegram is configured, `telegram.json` lands there too and the next run's prompt gets a "prior run" hint so codex can reference its own history without you wiring it up. A per-job summary jsonl also lands at `<root>/<job>.jsonl`, and the telegram bot reads its cron→telegram message inbox (`telegram_messages.json`) from the same root.
+`CODEXBOX_CRON_MODE_HISTORY_DIR` (default `$HOME/.aicodebox/cron`) is the whole cron state root:
 
-Setting `CODEXBOX_CRON_MODE_HISTORY_DIR` relocates all of it, so the scheduler and the telegram reply bridge agree on one directory. Mount that directory as a volume to persist history across container recreation.
+- `<root>/history/<workspace>/<timestamp>-<job>/` for each run, with `meta.json`, `stdout.log`, `stderr.log` and `result.txt`. With Telegram configured, `telegram.json` lands there too, and the next run's prompt gets a hint about the prior run, so Codex can read its own history.
+- `<root>/<job>.jsonl`, a summary per job.
+- `<root>/telegram_messages.json`, the inbox the bot reads to connect replies to cron messages.
 
-## Cron mode environment variables
+Setting `CODEXBOX_CRON_MODE_HISTORY_DIR` moves all of it, so the scheduler and the bot always agree on one directory. Mount it to keep history across container recreation.
 
-| Var | Default | What it does |
-|-----|---------|---------------|
-| `CODEXBOX_CRON_MODE` | `0` | Boot the cron scheduler (foreground; in-thread when telegram is also on) |
-| `CODEXBOX_CRON_MODE_FILE` | — | Path to the cron yaml |
-| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron` | Cron state root, holding run history, job summary jsonl files, and the telegram message inbox |
+## Cron mode settings
 
-> Every `CODEXBOX_*` variable is an alias for the `AICODEBOX_*` equivalent read by the base image. If both are set, `AICODEBOX_*` wins.
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `CODEXBOX_CRON_MODE` | `0` | Run the scheduler in the foreground, or inside the bot when Telegram is on |
+| `CODEXBOX_CRON_MODE_FILE` | none | Path to the job file |
+| `CODEXBOX_CRON_MODE_HISTORY_DIR` | `~/.aicodebox/cron` | Cron state root: run history, job summaries and the Telegram inbox |
 
-## Combined with telegram mode
+Every `CODEXBOX_*` name is an alias for the `AICODEBOX_*` name the base reads. If both are set, `AICODEBOX_*` wins.
 
-Setting `CODEXBOX_TELEGRAM_MODE=1` alongside cron is supported — cron then runs in-thread inside telegram, which is what makes `telegram_chat_id` on a job deliver its result to a chat. A job with an explicit `telegram_chat_id` still notifies on a successful run with empty result text (it posts a "finished (no output)" notice); a run that fails reports the exit code instead. See [telegram.md](telegram.md).
+## With Telegram mode
 
-## Combined with MCP mode
+With `CODEXBOX_TELEGRAM_MODE=1` as well, the scheduler runs inside the bot, which is what makes a job's `telegram_chat_id` deliver its result to a chat. A job with an explicit `telegram_chat_id` posts a "finished (no output)" notice when a successful run has empty result text, and a failed run reports its exit code. See [Telegram mode](telegram.md).
 
-Cron is a foreground mode, so [mcp.md](mcp.md) runs as a sidecar next to it — scheduled jobs on their own schedule, the same box reachable as a tool the whole time.
+## With MCP mode
+
+Cron is a foreground mode, so [MCP](mcp.md) runs as a separate server next to it. Jobs run on their schedule while the same box answers as a tool.

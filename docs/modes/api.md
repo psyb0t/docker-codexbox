@@ -1,8 +1,15 @@
-# API Mode
+---
+title: "API mode"
+description: "codexbox API mode: POST /run, async runs, workspace file endpoints and the OpenAI-compatible chat/completions endpoint, with every setting."
+nav_order: 1
+parent: "Modes"
+---
 
-`CODEXBOX_API_MODE=1`. Runs codexbox as a long-lived FastAPI server on `:8080` (override with `CODEXBOX_API_MODE_PORT`), exposing agent runs, workspace file operations, and an OpenAI-compatible chat endpoint.
+# API mode
 
-> **Required:** `CODEXBOX_AVAILABLE_MODELS=<csv>` (e.g. `gpt-5.1-codex,gpt-5.1-codex-mini`). API mode refuses to boot without it — `/openai/v1/models` needs a real list and there's no sensible default (codex has no hardcoded model slug; it's server-driven and OpenAI can add/retire models without notice).
+`CODEXBOX_API_MODE=1` runs codexbox as a long-lived FastAPI server on `:8080` (change it with `CODEXBOX_API_MODE_PORT`). It serves agent runs, workspace file operations and an OpenAI-compatible chat endpoint.
+
+> **Required:** `CODEXBOX_AVAILABLE_MODELS=<csv>`, for example `gpt-5.1-codex,gpt-5.1-codex-mini`. API mode refuses to start without it. `/openai/v1/models` needs a real list, and Codex has no fixed model name to fall back to. OpenAI's servers decide the list, and it changes without notice.
 
 ## Setup
 
@@ -12,33 +19,48 @@ services:
   codexbox:
     image: psyb0t/codexbox:latest
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       - CODEXBOX_API_MODE=1
       - CODEXBOX_API_MODE_TOKEN=your-secret
       - CODEXBOX_AVAILABLE_MODELS=gpt-5.1-codex,gpt-5.1-codex-mini
+      - OPENAI_API_KEY=sk-...
     volumes:
+      - ~/.codex:/home/aicode/.codex
       - ~/workspaces:/workspace
 ```
+
+Mount `~/.codex` to use a [subscription login](../auth.md#chatgpt-subscription) instead of `OPENAI_API_KEY`.
+
+For a local server in the current directory, the [wrapper](../wrapper.md) does the mounts for you. Forward the container settings with `CODEXBOX_ENV_`:
+
+```bash
+CODEXBOX_ENV_CODEXBOX_API_MODE=1 \
+CODEXBOX_ENV_CODEXBOX_AVAILABLE_MODELS=your-model-id \
+CODEXBOX_ENV_CODEXBOX_API_MODE_TOKEN=your-api-token \
+codexbox
+```
+
+The wrapper uses host networking, so the server listens on port 8080 of the host.
 
 ## Endpoints
 
 | Method | Path | What it does |
-|--------|------|--------------|
-| `GET` | `/healthz` | liveness |
-| `GET` | `/status` | in-flight runs |
-| `POST` | `/run` | sync agent run → `{runId, workspace, exitCode, text, ...}`; pass `"async": true` in the body to fire and get a `runId` back instead |
-| `GET` | `/run/result?runId=<id>` | poll async job |
-| `DELETE` | `/run/{run_id}` | kill in-flight run |
-| `GET` | `/files` | list the workspace root (`{entries: [{name, type, size?}, ...]}`) |
-| `GET` | `/files/{path}` | list a sub-directory, or stream a file's bytes |
-| `PUT` | `/files/{path}` | upload — raw request body becomes the file contents; parent dirs auto-created |
-| `DELETE` | `/files/{path}` | delete a file (refuses directories — 400) |
-| `POST` | `/openai/v1/chat/completions` | OpenAI-compatible (streaming + non-streaming; supports `tools` / `tool_choice` client-executed tool calling, composable with `response_format`) |
-| `GET` | `/openai/v1/models` | model list |
-| `POST` | `/mcp` | MCP server (streamable HTTP) — mounted only when `CODEXBOX_MCP_MODE=1`. See [mcp.md](mcp.md) |
+| --- | --- | --- |
+| `GET` | `/healthz` | Liveness, with no token required |
+| `GET` | `/status` | Runs in flight and busy workspaces |
+| `POST` | `/run` | Synchronous agent run, returning `{runId, workspace, exitCode, text, ...}`. With `"async": true` it returns a `runId` at once. |
+| `GET` | `/run/result?runId=<id>` | Poll an async run |
+| `DELETE` | `/run/{run_id}` | Kill a run in flight |
+| `GET` | `/files` | List the workspace root (`{entries: [{name, type, size?}, ...]}`) |
+| `GET` | `/files/{path}` | List a subdirectory, or stream a file's bytes |
+| `PUT` | `/files/{path}` | Upload. The raw request body becomes the file; parent directories are created. |
+| `DELETE` | `/files/{path}` | Delete a file. Directories are refused with 400. There is no undo. |
+| `POST` | `/openai/v1/chat/completions` | OpenAI-compatible chat, streaming and non-streaming |
+| `GET` | `/openai/v1/models` | The `CODEXBOX_AVAILABLE_MODELS` list |
+| `POST` | `/mcp/` | MCP over streamable HTTP, only when `CODEXBOX_MCP_MODE=1`. See [MCP mode](mcp.md). |
 
-All `/files/*` paths are resolved against the workspace root with traversal checking — `..` segments that escape the root return 400. Same `Authorization: Bearer ...` token gates them as the rest of the API.
+Every `/files` path resolves against the workspace root with traversal checking: a `..` that escapes the root returns 400. The same bearer token protects them as the rest of the API.
 
 ```bash
 # upload a file
@@ -47,59 +69,122 @@ curl -sS -X PUT \
   --data-binary @local.txt \
   http://localhost:8080/files/notes/hello.txt
 
-# download it back
-curl -sS --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
+# download it again
+curl -sS \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes/hello.txt
 
-# list the dir
-curl -sS --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
+# list the directory
+curl -sS \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes | jq
 
 # delete it
-curl -sS -X DELETE --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
+curl -sS -X DELETE \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   http://localhost:8080/files/notes/hello.txt
 ```
 
+Runs serialize per workspace. A second run against a busy workspace gets 409.
+
 ## Running a prompt
 
-**`POST /run`** body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `eventMode`, `outputFormat`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`.
-
-Set `"eventMode": "full"` to return every Codex `exec --json` record. The response wraps each native record as `{sequence, attempt, backend, eventType, event}`. The nested `event` is untouched, so reasoning items, command execution updates, file changes, MCP activity, web activity, todo updates, and turn usage are not collapsed or discarded. `"eventMode": "none"` returns only the final result. The default `"auto"` preserves legacy schema behavior by enabling events for `jsonSchema` requests; `"outputFormat": "json-verbose"` is the compatibility alias for that automatic full-event mode.
-
-`"outputFormat": "text"` and `"outputFormat": "json"` remain accepted legacy inputs but do not change the `/run` response serialization. New callers should use `eventMode`; only `json-verbose` has a compatibility effect while `eventMode` is `auto`.
-
-`jsonSchema` controls only Codex native structured output and can be combined with either event mode.
-
-By default, Codexbox pins the first top-level Codex `exec` session created for
-each canonical workspace and resumes that exact root ID on later calls. This
-keeps continuity stable when a run spawns subagents, whose rollout files may be
-newer but cannot accept direct user turns. Existing workspaces automatically
-migrate their newest top-level `exec` rollout. An explicit `resume` replaces
-the workspace pin after Codex confirms the thread; `noContinue` is ephemeral
-and leaves the pin unchanged.
+The `POST /run` body takes `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `eventMode`, `outputFormat`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async` and `fireAndForget`.
 
 ```bash
-curl -s http://localhost:8080/run \
+curl -sS http://localhost:8080/run \
   --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "say HELLO", "workspace": "/workspace"}'
 ```
 
-> Codex uses native JSON Schema enforcement through `--output-schema`. `jsonSchema` maps to that flag first. The shared validator and retry path remain a fallback if the returned text still fails validation.
+For a long run, send `"async": true` and poll until `status` is no longer `running`:
 
-`systemPrompt` maps to `-c instructions=...`, which replaces Codex's built-in instructions. `appendSystemPrompt` maps to `-c developer_instructions=...`. `noTools` disables shell and hosted web search, then selects a read-only sandbox. Codex still exposes its fixed planning and patch surfaces. `toolsAllowlist` has no built-in name-based Codex mapping, so it is logged and ignored. Use `noTools` or an MCP server's `enabled_tools` setting instead.
+```bash
+run_id=$(
+  curl -sS http://localhost:8080/run \
+    --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"prompt": "run the full test suite and summarize failures", "async": true}' |
+    jq -r .runId
+)
 
-## API mode environment variables
+curl -sS "http://localhost:8080/run/result?runId=$run_id" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" | jq
 
-| Var | Default | What it does |
-|-----|---------|---------------|
-| `CODEXBOX_API_MODE` | `0` | Boot the HTTP API server (foreground) |
-| `CODEXBOX_API_MODE_PORT` | `8080` | Port the API server binds to |
-| `CODEXBOX_API_MODE_TOKEN` | empty | Bearer token for the API surface. Empty = no auth |
-| `CODEXBOX_AVAILABLE_MODELS` | — | **Required for API mode.** CSV list returned by `/openai/v1/models`. API mode refuses to boot without it |
+# cancel it
+curl -sS -X DELETE "http://localhost:8080/run/$run_id" \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN"
+```
 
-> Every `CODEXBOX_*` variable is an alias for the `AICODEBOX_*` equivalent read by the base image. If both are set, `AICODEBOX_*` wins.
+### Events
 
-## Combined with MCP mode
+`"eventMode": "full"` returns every Codex `exec --json` record. Each one is wrapped as `{sequence, attempt, backend, eventType, event}`, and the nested `event` is untouched, so reasoning items, command execution updates, file changes, MCP activity, web activity, todo updates and turn usage all come through. `"eventMode": "none"` returns only the final result. The default, `"auto"`, keeps the older behavior of turning events on for `jsonSchema` requests; `"outputFormat": "json-verbose"` is the compatibility alias for that.
 
-API mode is the one foreground mode where MCP costs nothing extra — it mounts at `/mcp` on this same port instead of spawning a sidecar. See [mcp.md](mcp.md).
+`"outputFormat": "text"` and `"outputFormat": "json"` are still accepted but change nothing in the `/run` response. New callers should use `eventMode`.
+
+### Structured output
+
+`jsonSchema` maps to Codex's native `--output-schema`, so Codex itself enforces the schema. The shared validator and its retry stay as a fallback if the returned text still fails validation. `jsonSchema` works with either event mode.
+
+```bash
+curl -sS http://localhost:8080/run \
+  --oauth2-bearer "$CODEXBOX_API_MODE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "extract the version and license from README.md",
+    "workspace": "/workspace",
+    "jsonSchema": {
+      "type": "object",
+      "properties": {
+        "version": {"type": "string"},
+        "license": {"type": "string"}
+      },
+      "required": ["version", "license"]
+    }
+  }' | jq .json
+```
+
+### Prompts, tools and sessions
+
+`systemPrompt`, `appendSystemPrompt`, `noTools`, `toolsAllowlist`, `resume` and `noContinue` map onto Codex in ways that differ from the other aicodebox agents. [Codex adapter](../codex-adapter.md) has the mapping. In short: `toolsAllowlist` is ignored with a warning, and a call with neither `resume` nor `noContinue` continues the workspace's pinned Codex session.
+
+## OpenAI-compatible endpoint
+
+`POST /openai/v1/chat/completions` sits on the same port behind the same token. Point an OpenAI SDK's base URL at `http://host:8080/openai/v1`:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/openai/v1",
+    api_key="your-secret",
+)
+resp = client.chat.completions.create(
+    model="gpt-5.1-codex",
+    messages=[{"role": "user", "content": "say HELLO"}],
+)
+print(resp.choices[0].message.content)
+```
+
+- **Streaming:** `"stream": true` streams plain chat as it arrives. With `tools`, `tool_choice` or a schema, the full answer is computed first and then sent as one SSE stream. `stream_options.include_aicodebox_events` adds Codex's native records as named `aicodebox.native` SSE events; standard chunks are unchanged.
+- **Tools:** OpenAI-style `tools` and `tool_choice`, executed by the client. Codex runs its own tools internally, so the endpoint asks Codex to answer with a `{"tool_calls":[...]}` object and turns that into OpenAI `tool_calls`. It is stateless: send the full history on every round trip, as with the OpenAI tool loop.
+- **`response_format`:** `{"type":"text"}` (the default), `{"type":"json_object"}`, or `{"type":"json_schema","json_schema":{...}}`, which goes through the same `--output-schema` path as `jsonSchema`. It combines with `tools`; only the final answer that is not a tool call is checked against the schema.
+- **Headers** for what the OpenAI format has no field for: `x-aicodebox-workspace`, `x-aicodebox-continue`, `x-aicodebox-resume`, `x-aicodebox-append-system-prompt`, `x-aicodebox-json-schema` (used when `response_format` is not set), `x-aicodebox-no-tools`, `x-aicodebox-tools-allowlist`, `x-aicodebox-timeout-seconds` and `x-aicodebox-extra-args`. `x-claude-workspace`, `x-claude-continue` and `x-claude-append-system-prompt` are accepted as aliases.
+
+## API mode settings
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `CODEXBOX_API_MODE` | `0` | Run the HTTP API server in the foreground |
+| `CODEXBOX_API_MODE_PORT` | `8080` | Port the server binds |
+| `CODEXBOX_API_MODE_TOKEN` | empty | Bearer token for every route except `/healthz` and `/mcp/`, which has its own. Empty means no auth. |
+| `CODEXBOX_AVAILABLE_MODELS` | none | **Required.** Comma-separated list served at `/openai/v1/models` |
+
+Every `CODEXBOX_*` name is an alias for the `AICODEBOX_*` name the base reads. If both are set, `AICODEBOX_*` wins.
+
+With `CODEXBOX_API_MODE_TOKEN` empty, anyone who can reach the port can run Codex and read, write and delete workspace files. Set the token, and bind to loopback or put an authenticating proxy in front before exposing the port.
+
+## With MCP mode
+
+API mode is the one foreground mode where MCP costs nothing extra. It is mounted at `/mcp/` on this same port instead of running a second server. See [MCP mode](mcp.md).

@@ -1,12 +1,19 @@
-# Telegram Mode
+---
+title: "Telegram mode"
+description: "Run Codex from Telegram with codexbox: allowed chats and users, per-chat workspaces, file transfer, bot commands and per-chat overrides."
+nav_order: 2
+parent: "Modes"
+---
 
-`CODEXBOX_TELEGRAM_MODE=1` + `CODEXBOX_TELEGRAM_MODE_TOKEN=<token>`. Talk to codex from Telegram, with per-chat workspaces and settings that survive restarts.
+# Telegram mode
+
+`CODEXBOX_TELEGRAM_MODE=1` with `CODEXBOX_TELEGRAM_MODE_TOKEN=<token>` lets you talk to Codex from Telegram, with a workspace per chat and settings that survive restarts.
 
 ## Setup
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) and copy the token.
-2. Find the chat IDs you want to allow (a group's ID is negative, e.g. `-100123`).
-3. Write a config yaml and point the container at it.
+2. Find the chat IDs you want to allow. A group's ID is negative, such as `-100123`.
+3. Write a config file and point the container at it.
 
 ```yaml
 # ~/.aicodebox/telegram.yml
@@ -28,34 +35,36 @@ services:
     environment:
       - CODEXBOX_TELEGRAM_MODE=1
       - CODEXBOX_TELEGRAM_MODE_TOKEN=123456:ABC
+      - CODEXBOX_AVAILABLE_MODELS=gpt-5.1-codex,gpt-5.1-codex-mini
+      - OPENAI_API_KEY=sk-...
     volumes:
       - ~/.aicodebox:/home/aicode/.aicodebox
       - ~/workspaces:/workspace
 ```
 
-Config lives at `$HOME/.aicodebox/telegram.yml` by default — override with `CODEXBOX_TELEGRAM_MODE_CONFIG`.
+The config is read from `$HOME/.aicodebox/telegram.yml` unless `CODEXBOX_TELEGRAM_MODE_CONFIG` points elsewhere.
 
 ## What it does
 
-- Text in → codex runs → Markdown→HTML rendered response back.
-- File uploads land in the chat's workspace. `[SEND_FILE: path]` in codex's output delivers workspace files as Telegram attachments.
-- Per-chat overrides: `/model`, `/effort` (maps to codex's `model_reasoning_effort` levels), `/system_prompt`, `/append_system_prompt`. Persisted across restarts.
-- `/cancel` kills the in-flight run. `/reload` re-reads config. `/config` dumps merged settings. `/fetch <path>` downloads a file.
-- Replies to cron messages inject the job's instruction + result so codex has full context for follow-ups.
+- A text message runs Codex, and the Markdown answer comes back rendered as Telegram HTML.
+- Uploaded files land in the chat's workspace. `[SEND_FILE: path]` in Codex's answer sends that workspace file back as an attachment.
+- Per-chat overrides: `/model`, `/effort` (Codex's `model_reasoning_effort` levels), `/system_prompt` and `/append_system_prompt`. They are stored in `CODEXBOX_TELEGRAM_MODE_OVERRIDES` and survive restarts.
+- `/cancel` kills the run in flight, `/reload` reads the config again, `/config` shows the merged settings and `/fetch <path>` downloads a file.
+- Replying to a cron message adds that job's instruction and result to the prompt, so Codex has the context for a follow-up.
 
-## Telegram mode environment variables
+## Telegram mode settings
 
-| Var | Default | What it does |
-|-----|---------|---------------|
-| `CODEXBOX_TELEGRAM_MODE` | `0` | Boot the Telegram bot (foreground) |
-| `CODEXBOX_TELEGRAM_MODE_TOKEN` | — | Bot token from @BotFather |
-| `CODEXBOX_TELEGRAM_MODE_CONFIG` | `~/.aicodebox/telegram.yml` | Path to the telegram config yaml |
-| `CODEXBOX_TELEGRAM_MODE_OVERRIDES` | `~/.aicodebox/telegram_overrides.json` | Per-chat override store (model/effort/system prompts) |
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `CODEXBOX_TELEGRAM_MODE` | `0` | Run the Telegram bot in the foreground |
+| `CODEXBOX_TELEGRAM_MODE_TOKEN` | none | Bot token from @BotFather |
+| `CODEXBOX_TELEGRAM_MODE_CONFIG` | `~/.aicodebox/telegram.yml` | Path to the config file |
+| `CODEXBOX_TELEGRAM_MODE_OVERRIDES` | `~/.aicodebox/telegram_overrides.json` | Per-chat override store for model, effort and system prompts |
 
-The `/model` and `/effort` pickers are populated from `CODEXBOX_AVAILABLE_MODELS` and `CODEXBOX_AVAILABLE_EFFORTS`. Without `CODEXBOX_AVAILABLE_MODELS` the `/model` picker degrades to a "set this env var" reply — unlike API mode, telegram still boots.
+The `/model` and `/effort` pickers list `CODEXBOX_AVAILABLE_MODELS` and `CODEXBOX_AVAILABLE_EFFORTS`. Without `CODEXBOX_AVAILABLE_MODELS`, `/model` answers with a request to set it; unlike API mode, the bot still starts.
 
-> Every `CODEXBOX_*` variable is an alias for the `AICODEBOX_*` equivalent read by the base image. If both are set, `AICODEBOX_*` wins.
+Every `CODEXBOX_*` name is an alias for the `AICODEBOX_*` name the base reads. If both are set, `AICODEBOX_*` wins.
 
-## Combined with cron mode
+## With cron mode
 
-Telegram and cron are the one foreground pair that runs together — set both flags and cron runs in-thread inside telegram, which is what lets a job post its result into a chat and lets you reply to it. See [cron.md](cron.md).
+Telegram and cron are the one foreground pair that runs together. Set both flags and the scheduler runs in a thread inside the bot, which lets a job post its result into a chat and lets you reply to it. See [Cron mode](cron.md).

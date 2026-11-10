@@ -18,7 +18,7 @@ source tests/e2e-common.sh
 
 for f in tests/test_*.sh; do
     case "$(basename "$f")" in
-        test_full_image.sh|test_image_select.sh) continue ;;
+        test_full_image.sh | test_image_select.sh) continue ;;
     esac
     # shellcheck disable=SC1090
     source "$f"
