@@ -6,7 +6,7 @@ IMAGE="codexbox:local"
 # in parallel, so the suite tests codexbox on top of whatever the released
 # base ships. Override with CODEXBOX_BASE_IMAGE if you need to test against
 # a local fork of the base.
-BASE_IMAGE="${CODEXBOX_BASE_IMAGE:-psyb0t/aicodebox:latest}"
+BASE_IMAGE="${CODEXBOX_BASE_IMAGE:-psyb0t/aicodebox:v0.18.4@sha256:4962442c598356a0e570ea16d6ab22af83a5c4fb874165665010b83b256b00e9}"
 CONTAINER_PREFIX="codexbox-test"
 WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXTRA_CONTAINERS=()

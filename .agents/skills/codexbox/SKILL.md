@@ -205,7 +205,7 @@ Coexists with any foreground mode:
 | API mode (`CODEXBOX_API_MODE=1`) | mounted at `/mcp/` on the API port, no extra process |
 | Telegram / Cron / shell-only | sidecar uvicorn on `CODEXBOX_MCP_MODE_PORT` (default `8081`), served at the process root |
 
-The slashless `/mcp` spelling reaches the same API-mounted handler without a redirect.
+The slashless `/mcp` spelling reaches the same API-mounted handler without a redirect. The `@psyb0t/codexbox` stdio bridge appends `CODEXBOX_MCP_PATH` (default `/mcp/`) to `CODEXBOX_URL`; set `CODEXBOX_MCP_PATH=/` to reach the sidecar.
 
 Auth: `CODEXBOX_MCP_MODE_TOKEN=<token>`: bearer in `Authorization: Bearer ...`, or `?apiToken=...` for clients that can't set headers. Empty = no auth. **No fallback to `API_MODE_TOKEN`**: MCP has its own bearer, checked independently.
 

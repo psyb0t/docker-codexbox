@@ -1,4 +1,4 @@
-# docker-codexbox
+# codexbox
 
 Instructions for coding agents and contributors working in this repository. Read this file, then the rules in `.agents/rules/` that match what you are about to change.
 
@@ -8,7 +8,7 @@ Instructions for coding agents and contributors working in this repository. Read
 
 ## What it is
 
-Two Docker images, `psyb0t/codexbox:latest` (minimal) and `psyb0t/codexbox:latest-full`, that run the OpenAI Codex CLI on the shared aicodebox base (`psyb0t/aicodebox:latest` and `:latest-full`, from the sibling repository `psyb0t/docker-aicodebox`). The base owns the runtime: the entrypoint, the HTTP API, MCP, Telegram and cron modes, and the adapter contract. This repository adds the Codex side: the CLI install, the `CodexAdapter`, an init script for auth and workspace trust, a `CODEXBOX_*` entrypoint alias layer, and the host wrapper with its installer.
+Two Docker images, `psyb0t/codexbox:latest` (minimal) and `psyb0t/codexbox:latest-full`, that run the OpenAI Codex CLI on the shared aicodebox base (`psyb0t/aicodebox:v0.18.4` and `:latest-full`, from the sibling repository `psyb0t/docker-aicodebox`). The base owns the runtime: the entrypoint, the HTTP API, MCP, Telegram and cron modes, and the adapter contract. This repository adds the Codex side: the CLI install, the `CodexAdapter`, an init script for auth and workspace trust, a `CODEXBOX_*` entrypoint alias layer, and the host wrapper with its installer.
 
 Documentation: https://psyb0t.github.io/docker-codexbox/, built from `docs/`.
 
@@ -16,7 +16,7 @@ Documentation: https://psyb0t.github.io/docker-codexbox/, built from `docs/`.
 
 - `Dockerfile`, `Dockerfile.full`: install `@openai/codex@${CODEX_VERSION}` under `/home/aicode/.local` (so `codex update` works as `aicode`), the `codexbox` Python package with `--no-deps`, the init script, `codexbox-agent` and `codexbox-entrypoint`. They set `AICODEBOX_ADAPTER=codexbox.adapter:CodexAdapter`, `AICODEBOX_AGENT_BINARY=codexbox-agent`, `CODEXBOX_IMAGE_VARIANT` and `CODEX_HOME=/home/aicode/.codex`. The two files differ only in base image and variant marker.
 - `codexbox-entrypoint.sh`: copies each `CODEXBOX_<X>` in `_CODEXBOX_ALIASES` to `AICODEBOX_<X>` when the latter is empty, then execs `/usr/local/bin/aicodebox-entrypoint`.
-- `codexbox-agent.sh`: the shell and passthrough path. Management subcommands run verbatim; `exec` and `e` get `--dangerously-bypass-approvals-and-sandbox`; a bare call runs `codex resume --last` with the bypass flag unless `--no-continue` is given.
+- `codexbox-agent.sh`: the shell and passthrough path. Management subcommands run verbatim; `exec` and `e` get `--dangerously-bypass-approvals-and-sandbox`; a bare call runs `codex resume --last` with the bypass flag unless `--no-continue` is given. On those paths `CODEXBOX_MODEL` and `CODEXBOX_REASONING_EFFORT` become `-c` overrides placed before the caller's arguments.
 - `codexbox/codexbox/adapter.py`: `CodexAdapter`, used by the server modes. `build_argv` turns a `RunRequest` into `codex exec ... --json --skip-git-repo-check ... -`; `parse_output`, `parse_events` and `parse_stream_event` read Codex's JSONL events. It pins one top-level `exec` session per workspace in `$CODEX_HOME/sessions/.codexbox-roots/<sha256>.json`.
 - `codexbox/init.d/10-codex-auth-config.sh`: runs once per container. Seeds API-key auth with `codex login --with-api-key` unless a subscription login exists, and adds a trusted `[projects."<workspace>"]` table to `config.toml`.
 - `wrapper.sh`: the host `codexbox` command. Mounts the workspace at the same path, `~/.codex`, `~/.ssh/codexbox` and the Docker socket, uses host networking, forwards `CODEXBOX_ENV_*` and `AICODEBOX_ENV_*`, mounts sibling wrappers, and manages one persistent container per directory plus `_prog` and `_cron` containers.
@@ -59,10 +59,11 @@ Docker, Make and Bash are enough for everything except `make test` and `make tes
 
 ```bash
 make help                 # every target
-make build                # minimal image on psyb0t/aicodebox:latest
-make build-full           # full image on psyb0t/aicodebox:latest-full
+make build                # minimal image on psyb0t/aicodebox:v0.18.4
+make build-full           # full image on psyb0t/aicodebox:v0.18.4-full
 make lint                 # shellcheck, shfmt -i 4 -ci, ruff check, ruff format --check, pyright; all in containers
-make test-ci              # unit tests in the base image, image-select, managed-nested, entrypoint identity
+make test-ci              # unit tests in the base image, image-select, managed-nested, entrypoint identity,
+                          # e2e runner loading, agent model defaults, MCP bridge URL, scratch paths
 make test-unit            # unit tests via uv; needs ../docker-aicodebox checked out
 make test-full-image      # build full and check every advertised tool
 make test                 # e2e suite; needs .env.test with OPENAI_API_KEY or a subscription login

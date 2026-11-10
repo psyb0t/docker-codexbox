@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // codexbox MCP bridge. A thin stdio<->HTTP proxy: forwards MCP over stdio to a
-// running codexbox server's Streamable-HTTP endpoint (`$CODEXBOX_URL/mcp/`),
-// authenticating with `$CODEXBOX_MCP_MODE_TOKEN` when the server requires it.
+// running codexbox server's Streamable-HTTP endpoint, authenticating with
+// `$CODEXBOX_MCP_MODE_TOKEN` when the server requires it. The endpoint is
+// `$CODEXBOX_URL` plus `$CODEXBOX_MCP_PATH`, default `/mcp/` (MCP mounted in
+// API mode). A standalone MCP server answers at its port root, so it needs
+// `CODEXBOX_MCP_PATH=/`.
 //
 // stdout IS the MCP protocol channel, so diagnostics go to stderr only. The
 // sole output here is a fatal pre-launch console.error (user-facing CLI
@@ -11,7 +14,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 
-const MCP_PATH = "/mcp/";
+const DEFAULT_MCP_PATH = "/mcp/";
 
 const base = process.env.CODEXBOX_URL;
 
@@ -27,7 +30,8 @@ codexbox is self-hosted, see https://github.com/psyb0t/docker-codexbox`,
   process.exit(1);
 }
 
-const url = `${base.replace(/\/+$/, "")}${MCP_PATH}`;
+const mcpPath = process.env.CODEXBOX_MCP_PATH || DEFAULT_MCP_PATH;
+const url = `${base.replace(/\/+$/, "")}${mcpPath.startsWith("/") ? "" : "/"}${mcpPath}`;
 const token = process.env.CODEXBOX_MCP_MODE_TOKEN;
 const proxyEntry = require.resolve("mcp-remote/dist/proxy.js");
 

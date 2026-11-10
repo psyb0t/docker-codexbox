@@ -16,10 +16,10 @@ source tests/common.sh
 # shellcheck source=tests/e2e-common.sh
 source tests/e2e-common.sh
 
+# Only files that register e2e tests are sourced. The other tests/test_*.sh
+# files are standalone scripts that run on load and exit.
 for f in tests/test_*.sh; do
-    case "$(basename "$f")" in
-        test_full_image.sh | test_image_select.sh) continue ;;
-    esac
+    grep -q '^ALL_TESTS+=(' "$f" || continue
     # shellcheck disable=SC1090
     source "$f"
 done

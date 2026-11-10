@@ -44,7 +44,8 @@ Codex on the box and get its textual response), `list_files`, `read_file`,
 
 | Env var | Required | Description |
 |---|---|---|
-| `CODEXBOX_URL` | yes | Base URL of your running codexbox server, e.g. `http://localhost:8080`. The bridge appends `/mcp/`. |
+| `CODEXBOX_URL` | yes | Base URL of your running codexbox server, e.g. `http://localhost:8080`. The bridge appends `CODEXBOX_MCP_PATH`. |
+| `CODEXBOX_MCP_PATH` | no | Path of the MCP endpoint under `CODEXBOX_URL`. Default `/mcp/`, where API mode mounts MCP. A standalone MCP server (MCP mode without API mode, port 8081) answers at its port root: set `/`. |
 | `CODEXBOX_MCP_MODE_TOKEN` | no | Bearer token, only if the codexbox server was started with `CODEXBOX_MCP_MODE_TOKEN` set. |
 
 ## Install

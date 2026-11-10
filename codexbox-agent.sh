@@ -24,6 +24,23 @@ dbg() {
     return 0
 }
 
+# CODEXBOX_MODEL and CODEXBOX_REASONING_EFFORT become -c overrides placed
+# before the caller's arguments, so a later -m or -c from the caller wins.
+# Codex ignores these keys inside a [projects.*] table, and writing them at
+# the top level of config.toml would change the mounted host config for every
+# workspace. Values are quoted as TOML strings.
+toml_string() {
+    local value="${1//\\/\\\\}"
+    printf '"%s"' "${value//\"/\\\"}"
+}
+defaults=()
+if [ -n "${CODEXBOX_MODEL:-}" ]; then
+    defaults+=(-c "model=$(toml_string "$CODEXBOX_MODEL")")
+fi
+if [ -n "${CODEXBOX_REASONING_EFFORT:-}" ]; then
+    defaults+=(-c "model_reasoning_effort=$(toml_string "$CODEXBOX_REASONING_EFFORT")")
+fi
+
 # Subcommands (and version/help flags) that must run verbatim — no bypass
 # flag injected, no interactive-TUI treatment. Critical for the
 # login/logout/login-status subscription-OAuth flow.
@@ -44,10 +61,10 @@ case "${1:-}" in
         done
         if [ "$already_bypassed" -eq 1 ]; then
             dbg "passthrough subcommand: ${sub} (bypass already present)"
-            exec "$CODEX_BIN" "$sub" "$@"
+            exec "$CODEX_BIN" "$sub" ${defaults[@]+"${defaults[@]}"} "$@"
         fi
         dbg "passthrough subcommand: ${sub} (injecting bypass)"
-        exec "$CODEX_BIN" "$sub" "$BYPASS" "$@"
+        exec "$CODEX_BIN" "$sub" "$BYPASS" ${defaults[@]+"${defaults[@]}"} "$@"
         ;;
 esac
 
@@ -71,8 +88,8 @@ done
 
 if [ "$want_continue" -eq 1 ]; then
     dbg "launching interactive TUI, continuing last session for this workspace"
-    exec "$CODEX_BIN" resume --last "$BYPASS" ${args[@]+"${args[@]}"}
+    exec "$CODEX_BIN" resume --last "$BYPASS" ${defaults[@]+"${defaults[@]}"} ${args[@]+"${args[@]}"}
 fi
 
 dbg "launching interactive TUI, $NO_CONTINUE_FLAG requested — fresh session"
-exec "$CODEX_BIN" "$BYPASS" ${args[@]+"${args[@]}"}
+exec "$CODEX_BIN" "$BYPASS" ${defaults[@]+"${defaults[@]}"} ${args[@]+"${args[@]}"}

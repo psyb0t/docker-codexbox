@@ -1,8 +1,5 @@
 """Unit tests for CodexAdapter.
 
-Plan: `.plan-and-delegate/2026-07-21-080508_codexbox.md` (frozen CodexAdapter
-public surface).
-
 Runs in-process against the aicodebox AgentAdapter base contract. No docker,
 no real codex binary. Covers:
   - build_argv: base flags, resume subcommand insertion, no_continue,

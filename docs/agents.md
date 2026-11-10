@@ -44,10 +44,11 @@ Then set the plugin's environment:
 
 | Variable | Required | What it does |
 | --- | --- | --- |
-| `CODEXBOX_URL` | yes | Base URL of the server, such as `http://localhost:8080`. The bridge appends `/mcp/`. |
+| `CODEXBOX_URL` | yes | Base URL of the server, such as `http://localhost:8080`. The bridge appends `CODEXBOX_MCP_PATH`. |
+| `CODEXBOX_MCP_PATH` | no | Path of the MCP endpoint under `CODEXBOX_URL`. Default `/mcp/`. Set `/` for a separate MCP server. |
 | `CODEXBOX_MCP_MODE_TOKEN` | no | Bearer token, when the server sets `CODEXBOX_MCP_MODE_TOKEN` |
 
-Because the bridge appends `/mcp/`, it fits a server in [API mode](modes/api.md) with MCP on. A separate MCP server answers at its port root instead; point a client that speaks remote streamable HTTP straight at it.
+The default `/mcp/` fits a server in [API mode](modes/api.md) with MCP on. A separate MCP server answers at its port root instead, so set `CODEXBOX_URL=http://localhost:8081` and `CODEXBOX_MCP_PATH=/` for it.
 
 The plugin does not ship Codex or start a container. It connects to a codexbox server you run. A client that already supports remote streamable HTTP servers does not need it: point the client at `$CODEXBOX_URL/mcp/` with an `Authorization: Bearer <token>` header.
 

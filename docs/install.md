@@ -73,8 +73,8 @@ Pulling a new image does not update the installed wrapper. Run the installer aga
 
 ## Image variants
 
-- `psyb0t/codexbox:latest` is the minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq` and `curl`. It builds from [`Dockerfile`](https://github.com/psyb0t/docker-codexbox/blob/main/Dockerfile) on `psyb0t/aicodebox:latest`.
-- `psyb0t/codexbox:latest-full` builds from [`Dockerfile.full`](https://github.com/psyb0t/docker-codexbox/blob/main/Dockerfile.full) on `psyb0t/aicodebox:latest-full` and adds the same Codex layer.
+- `psyb0t/codexbox:latest` is the minimal image: Codex, Node.js, Python, `uv`, Docker, Git, `jq` and `curl`. It builds from [`Dockerfile`](https://github.com/psyb0t/docker-codexbox/blob/main/Dockerfile) on `psyb0t/aicodebox:v0.18.4`.
+- `psyb0t/codexbox:latest-full` builds from [`Dockerfile.full`](https://github.com/psyb0t/docker-codexbox/blob/main/Dockerfile.full) on `psyb0t/aicodebox:v0.18.4-full` and adds the same Codex layer.
 
 Release tags add `:vX.Y.Z` and `:vX.Y.Z-full`. Every push to `main` also publishes per-commit SHA tags.
 

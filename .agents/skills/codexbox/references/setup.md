@@ -168,7 +168,8 @@ MCP also keeps DNS rebinding protection enabled. Loopback hosts and origins work
 | `CODEXBOX_CONTAINER_NAME` | `aicodebox` | Scopes per-container state files (auth, etc.) |
 | `CODEXBOX_AVAILABLE_MODELS` | none | **Required for API mode.** CSV list returned by `/openai/v1/models` and shown in the Telegram `/model` picker |
 | `CODEXBOX_AVAILABLE_EFFORTS` | `none,minimal,low,medium,high,xhigh,max` | Override the effort/reasoning list shown by the Telegram `/effort` picker |
-| `CODEXBOX_MODEL` | none | Written as `model` into the workspace's `[projects."<workspace>"]` table in `config.toml` when the init script first creates that table. It does not set the model of API, MCP, Telegram or cron runs. |
+| `CODEXBOX_MODEL` | none | Default model for the shell path (interactive TUI and `codexbox exec`), passed as `-c model="..."` before your own arguments, so `-m` still wins. It does not set the model of API, MCP, Telegram or cron runs. |
+| `CODEXBOX_REASONING_EFFORT` | none | Default reasoning effort for the shell path, passed as `-c model_reasoning_effort="..."`. Same scope as `CODEXBOX_MODEL`. Neither has an `AICODEBOX_` alias. |
 
 Every `CODEXBOX_X` name above also works as `AICODEBOX_X` (the base image's native naming): the entrypoint translates `CODEXBOX_X` to `AICODEBOX_X` when only the codexbox-prefixed one is set. If both are set, `AICODEBOX_X` wins.
 
@@ -225,8 +226,8 @@ The builds pull the published aicodebox base, so no sibling checkout is needed.
 
 ```bash
 make help              # list targets
-make build             # psyb0t/codexbox:latest on psyb0t/aicodebox:latest
-make build-full        # psyb0t/codexbox:latest-full on psyb0t/aicodebox:latest-full
+make build             # psyb0t/codexbox:latest on psyb0t/aicodebox:v0.18.4
+make build-full        # psyb0t/codexbox:latest-full on psyb0t/aicodebox:v0.18.4-full
 make lint              # shellcheck, shfmt, ruff and pyright, all in containers
 make test-ci           # credential-free tests, as CI runs them
 make test              # full e2e suite (needs .env.test: OPENAI_API_KEY or a subscription login, optional Telegram creds)

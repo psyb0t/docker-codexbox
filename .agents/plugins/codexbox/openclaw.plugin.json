@@ -15,7 +15,11 @@
   "environment": {
     "CODEXBOX_URL": {
       "required": true,
-      "description": "Base URL of your running codexbox server, e.g. http://localhost:8080 (the bridge appends /mcp/)."
+      "description": "Base URL of your running codexbox server, e.g. http://localhost:8080 (the bridge appends CODEXBOX_MCP_PATH, default /mcp/)."
+    },
+    "CODEXBOX_MCP_PATH": {
+      "required": false,
+      "description": "Path of the MCP endpoint under CODEXBOX_URL. Default /mcp/ (API mode). Set / for a standalone MCP server on port 8081."
     },
     "CODEXBOX_MCP_MODE_TOKEN": {
       "required": false,

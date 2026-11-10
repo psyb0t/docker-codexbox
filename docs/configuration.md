@@ -41,14 +41,16 @@ The runtime belongs to the [aicodebox](https://psyb0t.github.io/docker-aicodebox
 
 ### Codex defaults for the workspace
 
-The [init script](https://github.com/psyb0t/docker-codexbox/blob/main/codexbox/init.d/10-codex-auth-config.sh) adds a `[projects."<workspace>"]` table with `trust_level = "trusted"` to `$CODEX_HOME/config.toml` when that table is missing, so Codex does not ask whether to trust the workspace. Two settings are written into that table at the same time:
+The [init script](https://github.com/psyb0t/docker-codexbox/blob/main/codexbox/init.d/10-codex-auth-config.sh) adds a `[projects."<workspace>"]` table with `trust_level = "trusted"` to `$CODEX_HOME/config.toml` when that table is missing, so Codex does not ask whether to trust the workspace.
+
+Two settings give Codex a default model and reasoning effort on the shell path (the interactive TUI, `codexbox exec` and a bare `codexbox "<prompt>"`):
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `CODEXBOX_MODEL` | none | Written as `model = "..."` in the workspace table |
-| `CODEXBOX_REASONING_EFFORT` | none | Written as `model_reasoning_effort = "..."` in the workspace table |
+| `CODEXBOX_MODEL` | none | Passed to Codex as `-c model="..."` |
+| `CODEXBOX_REASONING_EFFORT` | none | Passed to Codex as `-c model_reasoning_effort="..."`. Codex accepts `none`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. |
 
-Both are read only when the table is created. Changing them later has no effect until you remove that table from `config.toml`. Neither has an `AICODEBOX_` alias, and neither sets the model of an API, MCP, Telegram or cron run; those take the model from the request or job.
+`codexbox-agent` reads them on every run and puts them before your own arguments, so `-m` or `-c` on the command line still wins. Nothing is written to `config.toml`. Management subcommands such as `login`, `resume` and `review` run without them. Neither has an `AICODEBOX_` alias, and neither sets the model of an API, MCP, Telegram or cron run; those take the model from the request or job. Through the wrapper, set them on the host as `CODEXBOX_ENV_CODEXBOX_MODEL` and `CODEXBOX_ENV_CODEXBOX_REASONING_EFFORT`.
 
 ### Git identity
 

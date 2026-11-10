@@ -4,6 +4,14 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.8, 2026-11-10
+
+- Builds on aicodebox v0.18.4, now pinned by tag and digest instead of following `latest`. That release fixes a 500 on OpenAI messages with null content, checks image-fetch redirects, rejects workspace symlinks that escape the root, makes MCP `run_prompt` take the workspace lock and retry `json_schema` runs, stops the Telegram bot on a malformed `TELEGRAM_CHAT_ID`, and prints cron `{system_datetime}` in UTC.
+- `CODEXBOX_MODEL` and `CODEXBOX_REASONING_EFFORT` now take effect for interactive and `exec` runs. They are passed to Codex as `-c` overrides before your own arguments; before, they were written into the workspace's project table, where Codex ignores them. Server modes are unchanged.
+- The OpenClaw bridge takes `CODEXBOX_MCP_PATH` (default `/mcp/`). Set it to `/` for a standalone MCP server.
+- `./test.sh` loads only the test files that register end-to-end tests, and `.env.test.example` lists only real tests.
+- Titles the README and the documentation site `codexbox`.
+
 ## v0.7.7, 2026-11-10
 
 - Publishes the documentation at https://psyb0t.github.io/docker-codexbox/ and moves the reference material out of the README into it. Corrects `CODEXBOX_MODEL`: it is written once into the workspace's project entry in the Codex configuration and does not set the default model for runs. Adds the missing `eventMode` and `outputFormat` fields to the skill's `/run` example.

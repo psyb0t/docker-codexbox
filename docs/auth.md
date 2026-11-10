@@ -61,7 +61,7 @@ Codex has no fixed default model name. The available models come from the server
 - **ChatGPT subscription:** the GPT-5.6 family: `gpt-5.6-luna` (fastest and cheapest), `gpt-5.6-terra` (balanced) and `gpt-5.6-sol` (the flagship and the account default). A subscription account rejects the `*-codex` and `*-codex-mini` names with a 400 "not supported" error.
 - **API key:** the API catalog, such as `gpt-5.1-codex`, `gpt-5-codex` and `gpt-5.1-codex-mini`.
 
-Pass a model with `-m` or `--model` on the command line, or as the `model` field of `/run`, `/openai/v1/chat/completions`, a Telegram `/model` choice or a cron job. API mode requires `CODEXBOX_AVAILABLE_MODELS`, the list it serves at `/openai/v1/models`; see [Configuration](configuration.md#workspace-and-runtime).
+Pass a model with `-m` or `--model` on the command line, or as the `model` field of `/run`, `/openai/v1/chat/completions`, a Telegram `/model` choice or a cron job. API mode requires `CODEXBOX_AVAILABLE_MODELS`, the list it serves at `/openai/v1/models`; see [Configuration](configuration.md#workspace-and-runtime). `CODEXBOX_MODEL` and `CODEXBOX_REASONING_EFFORT` set a default for the shell path only; see [Codex defaults for the workspace](configuration.md#codex-defaults-for-the-workspace).
 
 ## Reasoning effort
 

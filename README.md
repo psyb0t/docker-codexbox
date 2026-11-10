@@ -1,4 +1,4 @@
-# docker-codexbox
+# codexbox
 
 [![CI](https://github.com/psyb0t/docker-codexbox/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/psyb0t/docker-codexbox/actions/workflows/pipeline.yml)
 [![version](https://raw.githubusercontent.com/psyb0t/docker-codexbox/badges/version.svg)](https://github.com/psyb0t/docker-codexbox/releases)
@@ -49,8 +49,8 @@ The wrapper mounts the current directory, keeps `~/.codex` so the login and sess
 
 ## Image variants
 
-- `psyb0t/codexbox:latest`: Codex, Node.js, Python, `uv`, Docker, Git, `jq` and `curl`, on `psyb0t/aicodebox:latest`.
-- `psyb0t/codexbox:latest-full`: the same Codex layer on `psyb0t/aicodebox:latest-full`, with Go, Python, JavaScript and TypeScript tooling, GitHub CLI, Terraform, kubectl, Helm, debuggers and database clients.
+- `psyb0t/codexbox:latest`: Codex, Node.js, Python, `uv`, Docker, Git, `jq` and `curl`, on `psyb0t/aicodebox:v0.18.4`.
+- `psyb0t/codexbox:latest-full`: the same Codex layer on `psyb0t/aicodebox:v0.18.4-full`, with Go, Python, JavaScript and TypeScript tooling, GitHub CLI, Terraform, kubectl, Helm, debuggers and database clients.
 
 The full image bundles Terraform, which is BUSL-1.1 and not OSI-approved open source. The [variant list and licensing notes](https://psyb0t.github.io/docker-codexbox/install/#image-variants) have the details, and [THIRD_PARTY.md](https://github.com/psyb0t/docker-codexbox/blob/main/THIRD_PARTY.md) lists every bundled component.
 

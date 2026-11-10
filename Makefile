@@ -7,10 +7,10 @@ PKG        := codexbox
 # one-offs: `VERSION=0.10.1-rc1 make build`.
 VERSION    ?= $(shell awk -F\" '/^version *= *"/ {print $$2; exit}' codexbox/pyproject.toml)
 TAG        := v$(VERSION)
-# Shared first-party base images follow their published latest variants.
+# The aicodebox release both images build on, pinned by tag and digest.
 # Override only to test a deliberately selected local fork.
-BASE_IMAGE ?= psyb0t/aicodebox:latest
-FULL_BASE_IMAGE ?= psyb0t/aicodebox:latest-full
+BASE_IMAGE ?= psyb0t/aicodebox:v0.18.4@sha256:4962442c598356a0e570ea16d6ab22af83a5c4fb874165665010b83b256b00e9
+FULL_BASE_IMAGE ?= psyb0t/aicodebox:v0.18.4-full@sha256:dcacf5779530eaf346979e50cb134ab5f6be56bba1654cc334f158f37b7d884d
 CODEX_VERSION ?= 0.162.1
 
 # Lint and CI test tooling. Python checks run in the base image, which
@@ -40,7 +40,7 @@ PY_SETUP = uv venv -q --system-site-packages /tmp/venv; \
 	uv pip install -q --python /tmp/venv/bin/python $(PY_TOOLS); \
 	. /tmp/venv/bin/activate;
 
-.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested clean help version pkg-lock lint lint-shell lint-python test-ci test-unit-ci docs
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested test-e2e-runner test-agent-defaults test-mcp-bridge test-scratch-paths clean help version pkg-lock lint lint-shell lint-python test-ci test-unit-ci docs
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -120,6 +120,19 @@ test-image-select: ## Verify installer/wrapper minimal/full selection without Do
 test-managed-nested: ## Verify managed install and nested wrapper propagation without Docker
 	bash tests/test_managed_nested.sh
 
+test-e2e-runner: ## Verify test.sh loads only e2e test files, with a fake docker and no credentials
+	bash tests/test_e2e_runner.sh
+
+test-agent-defaults: ## Verify CODEXBOX_MODEL and CODEXBOX_REASONING_EFFORT reach codex on the shell path
+	bash tests/test_agent_defaults.sh
+
+test-mcp-bridge: ## Verify the URL the OpenClaw MCP bridge connects to, with node from the base image
+	docker run --rm --user "$$(id -u):$$(id -g)" -e HOME=/tmp \
+		-v "$(CURDIR):/src:ro" -w /src --entrypoint bash $(CI_IMAGE) tests/test_mcp_bridge.sh
+
+test-scratch-paths: ## Verify no tracked file points at the local planning directory
+	bash tests/test_scratch_paths.sh
+
 test-full-image: build-full ## Build full and verify Codex plus every advertised tool
 	IMAGE=$(IMAGE_NAME):latest-full bash tests/test_full_image.sh
 
@@ -153,7 +166,7 @@ lint-python: ## ruff check, ruff format --check and pyright over the adapter
 test-unit-ci: ## Run the adapter unit tests in the base image, no uv or sibling checkout needed
 	$(PY_RUN) '$(PY_SETUP) python -m pytest -p no:cacheprovider tests'
 
-test-ci: test-unit-ci test-image-select test-managed-nested test-entrypoint-identity ## Credential-free tests that CI runs
+test-ci: test-unit-ci test-image-select test-managed-nested test-entrypoint-identity test-e2e-runner test-agent-defaults test-mcp-bridge test-scratch-paths ## Credential-free tests that CI runs
 
 docs: ## Build the documentation site into .testing/docs-site
 	@mkdir -p "$(DOCS_SITE)"

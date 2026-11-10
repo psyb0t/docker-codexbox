@@ -47,19 +47,15 @@ if [ -n "${OPENAI_API_KEY:-}" ]; then
     fi
 fi
 
-# ── (c) config.toml — trust the workspace + optional model/effort defaults ──
+# ── (c) config.toml: trust the workspace ────────────────────────────────────
 # codex writes TOML (not JSON), so seed it with a simple idempotent
 # append: only touch the file when the workspace trust entry is missing.
+# CODEXBOX_MODEL and CODEXBOX_REASONING_EFFORT are not written here: Codex
+# ignores model keys inside a [projects.*] table. codexbox-agent passes them.
 if [ ! -f "$CONFIG_TOML" ] || ! grep -qF "[projects.\"$WORKSPACE_DIR\"]" "$CONFIG_TOML"; then
     {
         printf '\n[projects."%s"]\n' "$WORKSPACE_DIR"
         printf 'trust_level = "trusted"\n'
-        if [ -n "${CODEXBOX_MODEL:-}" ]; then
-            printf 'model = "%s"\n' "$CODEXBOX_MODEL"
-        fi
-        if [ -n "${CODEXBOX_REASONING_EFFORT:-}" ]; then
-            printf 'model_reasoning_effort = "%s"\n' "$CODEXBOX_REASONING_EFFORT"
-        fi
     } >>"$CONFIG_TOML"
     chmod 600 "$CONFIG_TOML"
 fi

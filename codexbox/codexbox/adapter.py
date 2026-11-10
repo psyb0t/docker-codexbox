@@ -1,7 +1,6 @@
 """CodexAdapter — wires the aicodebox AgentAdapter contract to the OpenAI Codex CLI.
 
-codex CLI surface used here (see .plan-and-delegate/2026-07-21-080508_codexbox.md
-for the full ground-truth map):
+codex CLI surface used here:
   exec [OPTIONS] [PROMPT]                   non-interactive; PROMPT omitted/"-" reads stdin
   --json                                    JSONL ThreadEvent stream on stdout
   --dangerously-bypass-approvals-and-sandbox  headless bypass (alias --yolo)
@@ -319,7 +318,7 @@ class CodexAdapter(AgentAdapter):
             # Codex has native --output-schema enforcement (unlike pi/claude),
             # but it only accepts a FILE path, not inline JSON — write the
             # schema to a temp file. Leaking this temp file in an ephemeral
-            # container is acceptable (documented in the project plan).
+            # container is acceptable.
             fd, schema_path = tempfile.mkstemp(
                 suffix=".json",
                 prefix="codex-schema-",
