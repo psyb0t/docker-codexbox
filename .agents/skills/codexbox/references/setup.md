@@ -14,9 +14,7 @@ wrapper handles the workspace, state, SSH, image, and nested launch context.
 
 ## Quick Install (wrapper)
 
-The one-liner installer pulls the image, creates persistent Codex/SSH dirs, and installs the `codexbox` wrapper on `PATH`.
-
-**Recommended: download, inspect, then run.** Piping a remote script straight into bash executes unreviewed remote code as you. Download it, read it, then run it:
+The installer pulls the image, creates persistent Codex/SSH dirs, generates an SSH key, and uses `sudo` to install the `codexbox` wrapper on `PATH` (`CODEXBOX_INSTALL_DIR` changes the directory, default `/usr/local/bin`). It downloads the wrapper from the same release ref as the installer (`CODEXBOX_INSTALL_REF` overrides it). Download the installer, read it, then run it:
 
 ```bash
 curl -fsSL -o install.sh https://raw.githubusercontent.com/psyb0t/docker-codexbox/main/install.sh
@@ -88,7 +86,7 @@ docker run -d --name codexbox \
   -v "$PWD:/workspace" \
   -v "$HOME/.codex:/home/aicode/.codex" \
   <mode env vars here> \
-  -p <port>:<port> \
+  -p 127.0.0.1:<port>:<port> \
   psyb0t/codexbox:latest
 ```
 

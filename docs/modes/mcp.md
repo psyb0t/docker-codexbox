@@ -1,8 +1,6 @@
 ---
 title: "MCP mode"
 description: "codexbox MCP mode: run_prompt and workspace file tools over streamable HTTP, where it is served, its bearer token and reverse-proxy allowlists."
-nav_order: 4
-parent: "Modes"
 ---
 
 # MCP mode

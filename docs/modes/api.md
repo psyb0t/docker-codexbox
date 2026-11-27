@@ -1,8 +1,6 @@
 ---
 title: "API mode"
 description: "codexbox API mode: POST /run, async runs, workspace file endpoints and the OpenAI-compatible chat/completions endpoint, with every setting."
-nav_order: 1
-parent: "Modes"
 ---
 
 # API mode

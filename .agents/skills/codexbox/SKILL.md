@@ -1,10 +1,14 @@
 ---
 name: codexbox
-description: "Install, configure, or run Codex through the codexbox wrapper, or connect to its HTTP, MCP, Telegram, or cron surfaces."
+description: "Install, configure, or run OpenAI Codex through the codexbox Docker wrapper (host networking, Docker socket and no Codex sandbox by default), or call its HTTP, OpenAI-compatible, MCP, Telegram, or cron surfaces. Use when the user asks to run or serve Codex in a container."
 homepage: https://github.com/psyb0t/docker-codexbox
 user-invocable: true
 metadata:
-  { "openclaw": { "emoji": "🧑‍💻", "primaryEnv": "CODEXBOX_URL", "requires": { "bins": ["docker", "curl"] } } }
+  { "openclaw": { "emoji": "💻", "primaryEnv": "CODEXBOX_URL", "requires": { "bins": ["docker", "curl"] } } }
+permissions:
+  network: "Calls to a codexbox server the user runs, at http://localhost:8080 by default. The installer and wrapper reach GitHub and Docker Hub. Codex sends requests to OpenAI, or to OPENAI_BASE_URL when set, and Telegram mode uses api.telegram.org."
+  shell: "Run the codexbox wrapper, docker and curl. The installer uses sudo to copy the wrapper into /usr/local/bin."
+  filesystem: "Read and write the workspace directory the wrapper mounts, ~/.codex (Codex login and sessions) and ~/.ssh/codexbox (a generated key), and write the wrapper to the install directory."
 ---
 
 # codexbox
@@ -60,8 +64,10 @@ choose another approach.
 ## Security & safety
 
 - **Set the mode tokens before exposing a port.** `CODEXBOX_API_MODE_TOKEN` (REST) and `CODEXBOX_MCP_MODE_TOKEN` (MCP) each default to no auth when unset, leaving that surface open to anyone who can reach it: run-execution plus full workspace file access. The two are independent (the MCP token has no fallback to the API token), so set whichever mode(s) you enable, and bind to loopback / behind an authenticating proxy. Per-mode detail: [HTTP REST API mode](#http-rest-api-mode), [MCP server mode](#mcp-server-mode).
-- **File deletion has no undo.** The run/file tools include a remove operation; only delete files the current task created, only when the user asked, and don't touch another caller's data on a shared workspace.
-- **The one-line installer pipes a remote script into `bash`.** Piping a remote script straight into bash executes unreviewed remote code as you. Prefer download → inspect → run (shown in [references/setup.md](references/setup.md)) unless you already trust the source and channel.
+- **Deletion has no undo.** The file delete endpoint, the MCP `delete_file` tool and `codexbox clear-session` remove data. Use them only on files or sessions the current task created, only when the user asked for that removal, and never in another caller's workspace.
+- **The standard wrapper is not a sandbox.** It uses host networking, always mounts `/var/run/docker.sock` (control of the host Docker daemon), and Codex runs inside with its approvals and sandbox bypassed and passwordless sudo. Do not run untrusted prompts or repositories through it. Cron jobs run unattended, so schedule only jobs the user asked for.
+- **Data leaves the machine only to these hosts.** Codex sends prompts and the files it reads to OpenAI, or to `OPENAI_BASE_URL` when set. Telegram mode sends bot messages and files to the Telegram Bot API. The installer fetches the wrapper from GitHub and the image from Docker Hub. The `curl` examples below call a codexbox server you run yourself, on `localhost` over plain HTTP by default; put a TLS reverse proxy in front for any other host. Keys and tokens in the examples are placeholders.
+- **The installer is downloaded to a file, read, then run.** It generates an SSH key, pulls the image and uses `sudo` to install the wrapper; see [references/setup.md](references/setup.md).
 
 ## When To Use
 
@@ -123,7 +129,7 @@ docker run -d --name codexbox-api \
   -e CODEXBOX_AVAILABLE_MODELS=gpt-5.1-codex,gpt-5.1-codex-mini \
   -e OPENAI_API_KEY=sk-... \
   -v "$PWD:/workspace" \
-  -p 8080:8080 \
+  -p 127.0.0.1:8080:8080 \
   psyb0t/codexbox:latest
 ```
 
@@ -144,7 +150,7 @@ With `CODEXBOX_API_MODE_TOKEN` unset the API surface is unauthenticated: anyone 
 | `GET` | `/openai/v1/models` | model list from `CODEXBOX_AVAILABLE_MODELS` |
 | `POST` | `/mcp/` | MCP server, mounted only when `CODEXBOX_MCP_MODE=1` (see MCP mode) |
 
-`DELETE /files/{path}` removes a workspace file (no undo). Confirm the target path first and only remove files the current task created. See [Security & safety](#security--safety).
+The delete row above removes one workspace file. See [Security & safety](#security--safety) before using it.
 
 `POST /run` body: `prompt` (required), `workspace`, `model`, `systemPrompt`, `appendSystemPrompt`, `jsonSchema`, `eventMode`, `outputFormat`, `noContinue`, `resume`, `timeoutSeconds`, `thinking`, `noTools`, `toolsAllowlist`, `includeRaw`, `async`, `fireAndForget`. With `jsonSchema` set, the response adds `json`, `events`, `sessionId`, `usage`, `attempts`. codex has native `--output-schema` enforcement, so `jsonSchema` maps straight onto it; the shared validator and its retry stay only as a fallback. `"eventMode": "full"` returns every native Codex event, `"none"` only the final result, and the default `"auto"` turns events on for `jsonSchema` requests.
 
@@ -219,7 +225,7 @@ docker run -d --name codexbox-api \
   -e CODEXBOX_MCP_MODE=1 -e CODEXBOX_MCP_MODE_TOKEN=your-mcp-secret \
   -e CODEXBOX_AVAILABLE_MODELS=gpt-5.1-codex \
   -e OPENAI_API_KEY=sk-... \
-  -v "$PWD:/workspace" -p 8080:8080 \
+  -v "$PWD:/workspace" -p 127.0.0.1:8080:8080 \
   psyb0t/codexbox:latest
 ```
 

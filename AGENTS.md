@@ -31,7 +31,7 @@ Data flow in a server mode: client -> aicodebox mode (API, MCP, Telegram, cron) 
 - Bash for the wrapper, installer, entrypoint, agent launcher, init script and tests.
 - Codex CLI pinned by `CODEX_VERSION` (0.162.1) in the `Makefile` and both Dockerfiles.
 - Node.js for the OpenClaw MCP bridge in `.agents/plugins/codexbox` (`mcp-remote` 0.14.3).
-- Docs: Jekyll on GitHub Pages with just-the-docs v0.12.0.
+- Docs: Docusaurus, built from `docs/` through `website/` and published to GitHub Pages by `.github/workflows/docs.yml`.
 
 ## Layout
 
@@ -44,7 +44,8 @@ Data flow in a server mode: client -> aicodebox mode (API, MCP, Telegram, cron) 
 | `codexbox-entrypoint.sh`, `codexbox-agent.sh` | Image entrypoint and agent launcher |
 | `wrapper.sh`, `install.sh` | Host command and installer |
 | `test.sh`, `tests/` | E2E runner (`tests/test_smoke.sh`, `tests/e2e-common.sh`) and standalone shell tests |
-| `docs/` | Documentation site source, published from `main` |
+| `docs/` | Documentation pages, published from `main` |
+| `website/` | Docusaurus config, sidebar order (`sidebars.mjs`), lockfile and `static/llms.txt` |
 | `.agents/skills/codexbox/` | The agent skill and `references/setup.md` |
 | `.agents/plugins/codexbox/` | The OpenClaw stdio-to-HTTP MCP bridge |
 | `.agents/.claude-plugin/`, `.agents/.codex-plugin/` | Claude Code and Codex plugin manifests |
@@ -67,7 +68,8 @@ make test-ci              # unit tests in the base image, image-select, managed-
 make test-unit            # unit tests via uv; needs ../docker-aicodebox checked out
 make test-full-image      # build full and check every advertised tool
 make test                 # e2e suite; needs .env.test with OPENAI_API_KEY or a subscription login
-make docs                 # build the docs site into .testing/docs-site
+make docs                 # build the docs site into website/build and check links
+make docs-lock            # refresh website/pnpm-lock.yaml
 make version V=X.Y.Z      # sync version metadata without committing or tagging
 ```
 

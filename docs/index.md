@@ -1,10 +1,7 @@
 ---
-title: "Home"
+title: "codexbox"
 description: "codexbox runs the OpenAI Codex CLI in a Docker container, with a host wrapper, an HTTP API, an OpenAI-compatible endpoint, MCP, Telegram and cron."
-nav_order: 1
-permalink: /
-seo:
-  type: WebSite
+slug: /
 ---
 
 # codexbox

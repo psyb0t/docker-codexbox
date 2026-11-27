@@ -1,8 +1,6 @@
 ---
 title: "Cron mode"
 description: "Schedule Codex jobs with codexbox cron mode: the YAML job file, 6-field schedules, run history, session continuity and Telegram delivery."
-nav_order: 3
-parent: "Modes"
 ---
 
 # Cron mode

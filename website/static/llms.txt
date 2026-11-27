@@ -1,0 +1,18 @@
+# codexbox
+
+> OpenAI Codex CLI in a Docker image built on aicodebox, with a host wrapper, an HTTP API, an OpenAI-compatible endpoint, MCP, Telegram and cron.
+
+- [codexbox](https://psyb0t.github.io/docker-codexbox/): codexbox runs the OpenAI Codex CLI in a Docker container, with a host wrapper, an HTTP API, an OpenAI-compatible endpoint, MCP, Telegram and cron.
+- [Agent integrations](https://psyb0t.github.io/docker-codexbox/agents/): Install the codexbox skill and plugins in Claude Code, Codex and OpenClaw, or bridge a stdio MCP client to a running codexbox server.
+- [Authentication](https://psyb0t.github.io/docker-codexbox/auth/): Log Codex in with an OpenAI API key or a ChatGPT subscription, keep the login across containers, and pick models and reasoning effort.
+- [Codex adapter](https://psyb0t.github.io/docker-codexbox/codex-adapter/): How codexbox maps run options to codex exec flags: system prompts, noTools, toolsAllowlist, schemas, reasoning effort and session continuation.
+- [Configuration](https://psyb0t.github.io/docker-codexbox/configuration/): Every codexbox container setting: CODEXBOX_ names and their AICODEBOX_ aliases, mode flags, workspace, models, Git identity, init scripts and ports.
+- [Development](https://psyb0t.github.io/docker-codexbox/development/): Build, lint and test codexbox from a checkout with Make and Docker, what CI runs on each push, how releases are cut and how to build these docs.
+- [Install](https://psyb0t.github.io/docker-codexbox/install/): Install the codexbox wrapper with the one-line installer or from a checkout, pick the minimal or full image, and know what each image licenses.
+- [Modes](https://psyb0t.github.io/docker-codexbox/modes/): How codexbox's API, Telegram, cron and MCP modes start, which ones run together, and where MCP is served in each combination.
+- [API mode](https://psyb0t.github.io/docker-codexbox/modes/api/): codexbox API mode: POST /run, async runs, workspace file endpoints and the OpenAI-compatible chat/completions endpoint, with every setting.
+- [Cron mode](https://psyb0t.github.io/docker-codexbox/modes/cron/): Schedule Codex jobs with codexbox cron mode: the YAML job file, 6-field schedules, run history, session continuity and Telegram delivery.
+- [MCP mode](https://psyb0t.github.io/docker-codexbox/modes/mcp/): codexbox MCP mode: run_prompt and workspace file tools over streamable HTTP, where it is served, its bearer token and reverse-proxy allowlists.
+- [Telegram mode](https://psyb0t.github.io/docker-codexbox/modes/telegram/): Run Codex from Telegram with codexbox: allowed chats and users, per-chat workspaces, file transfer, bot commands and per-chat overrides.
+- [Troubleshooting](https://psyb0t.github.io/docker-codexbox/troubleshooting/): codexbox error messages from the installer, the wrapper, API mode, Codex auth and MCP, with the cause of each and how to fix it.
+- [The codexbox wrapper](https://psyb0t.github.io/docker-codexbox/wrapper/): The codexbox host command: its subcommands, the per-directory container, host settings, CODEXBOX_ENV_ forwarding, sibling boxes and SSH agents.

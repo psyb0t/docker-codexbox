@@ -48,10 +48,15 @@ profile.out
 .cover/
 htmlcov/
 
-# Per-run orchestration scaffolding, never commit (.testing/ also holds the docs build in .testing/docs-site)
+# Per-run orchestration scaffolding, never commit (.testing/ also holds the docs dependency cache in .testing/docs-cache)
 .plan-and-delegate/
 .testing/
 .secaudit/
 
 # Local config overrides at any depth
 *.local.json
+
+# Documentation site build output and dependencies
+/website/node_modules/
+/website/.docusaurus/
+/website/build/

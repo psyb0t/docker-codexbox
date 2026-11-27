@@ -119,7 +119,7 @@ make build-full  # full image
 make lint        # shellcheck, shfmt, ruff and pyright, all in containers
 make test-ci     # the credential-free tests CI runs
 make test        # the end-to-end suite (needs .env.test)
-make docs        # build the documentation site into .testing/docs-site
+make docs        # build the documentation site into website/build
 ```
 
 Details in [Development](https://psyb0t.github.io/docker-codexbox/development/).

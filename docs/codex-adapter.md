@@ -1,7 +1,6 @@
 ---
 title: "Codex adapter"
 description: "How codexbox maps run options to codex exec flags: system prompts, noTools, toolsAllowlist, schemas, reasoning effort and session continuation."
-nav_order: 7
 ---
 
 # Codex adapter

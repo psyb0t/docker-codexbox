@@ -1,8 +1,6 @@
 ---
 title: "Modes"
 description: "How codexbox's API, Telegram, cron and MCP modes start, which ones run together, and where MCP is served in each combination."
-nav_order: 6
-has_children: true
 ---
 
 # Modes

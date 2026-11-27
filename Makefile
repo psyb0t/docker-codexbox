@@ -22,8 +22,6 @@ SHELLCHECK_IMAGE ?= koalaman/shellcheck:v0.11.0
 SHFMT_IMAGE      ?= mvdan/shfmt:v3.14.1
 SHELL_SOURCES    := wrapper.sh install.sh test.sh codexbox-entrypoint.sh codexbox-agent.sh \
 	codexbox/init.d/10-codex-auth-config.sh tests/*.sh
-DOCS_SITE        ?= .testing/docs-site
-JEKYLL_IMAGE     := ghcr.io/actions/jekyll-build-pages:v1.0.13@sha256:6791ebfd912185ed59bfb5fb102664fa872496b79f87ff8b9cfba292a7345041
 
 # Runs a bash script in CI_IMAGE as the calling user, with the repository
 # mounted read-only and a throwaway venv that sees the system aicodebox.
@@ -40,7 +38,7 @@ PY_SETUP = uv venv -q --system-site-packages /tmp/venv; \
 	uv pip install -q --python /tmp/venv/bin/python $(PY_TOOLS); \
 	. /tmp/venv/bin/activate;
 
-.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested test-e2e-runner test-agent-defaults test-mcp-bridge test-scratch-paths clean help version pkg-lock lint lint-shell lint-python test-ci test-unit-ci docs
+.PHONY: all build build-full build-all install install-full install-wrapper pull-base pull-full-base test test-full-image test-image-select test-managed-nested test-e2e-runner test-agent-defaults test-mcp-bridge test-scratch-paths clean help version pkg-lock lint lint-shell lint-python test-ci test-unit-ci docs docs-build docs-lock
 
 all: build ## Build the codexbox image on top of the published base
 
@@ -168,15 +166,24 @@ test-unit-ci: ## Run the adapter unit tests in the base image, no uv or sibling 
 
 test-ci: test-unit-ci test-image-select test-managed-nested test-entrypoint-identity test-e2e-runner test-agent-defaults test-mcp-bridge test-scratch-paths ## Credential-free tests that CI runs
 
-docs: ## Build the documentation site into .testing/docs-site
-	@mkdir -p "$(DOCS_SITE)"
-	docker run --rm \
-		--user "$$(id -u):$$(id -g)" \
-		-e HOME=/tmp \
-		-e GITHUB_WORKSPACE=/work \
-		-e GITHUB_REPOSITORY=psyb0t/docker-codexbox \
-		-e INPUT_SOURCE=docs \
-		-e INPUT_DESTINATION="$(DOCS_SITE)" \
-		-e INPUT_VERBOSE=false \
-		-v "$(CURDIR):/work" \
-		$(JEKYLL_IMAGE)
+# The site builds in a pinned Node container. The install is age-gated and runs
+# no package scripts (see website/pnpm-workspace.yaml); the build itself has no
+# network. The output directory website/build is gitignored.
+DOCS_NODE_IMAGE := node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20
+DOCS_CACHE := .testing/docs-cache
+DOCS_RUN := docker run --rm --init --cap-drop ALL --security-opt no-new-privileges:true \
+	--user $(shell id -u):$(shell id -g) -e HOME=/tmp -e COREPACK_HOME=/cache/corepack \
+	-v "$(CURDIR)/$(DOCS_CACHE):/cache" \
+	-v "$(CURDIR)/docs:/work/docs:ro" -v "$(CURDIR)/website:/work/website" -w /work/website
+
+docs: docs-build ## Build the documentation site into website/build
+
+docs-build: | $(DOCS_CACHE) ## Install the locked docs dependencies and build the site
+	$(DOCS_RUN) $(DOCS_NODE_IMAGE) corepack pnpm install --frozen-lockfile --ignore-scripts --store-dir /cache/pnpm
+	$(DOCS_RUN) --network none $(DOCS_NODE_IMAGE) corepack pnpm run build
+
+docs-lock: | $(DOCS_CACHE) ## Refresh website/pnpm-lock.yaml
+	$(DOCS_RUN) $(DOCS_NODE_IMAGE) corepack pnpm install --lockfile-only --ignore-scripts --store-dir /cache/pnpm
+
+$(DOCS_CACHE):
+	mkdir -p "$@"

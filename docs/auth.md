@@ -1,7 +1,6 @@
 ---
 title: "Authentication"
 description: "Log Codex in with an OpenAI API key or a ChatGPT subscription, keep the login across containers, and pick models and reasoning effort."
-nav_order: 4
 ---
 
 # Authentication

@@ -1,7 +1,6 @@
 ---
 title: "Configuration"
 description: "Every codexbox container setting: CODEXBOX_ names and their AICODEBOX_ aliases, mode flags, workspace, models, Git identity, init scripts and ports."
-nav_order: 5
 ---
 
 # Configuration

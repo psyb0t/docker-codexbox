@@ -49,6 +49,8 @@ jobs:
       # Report scan findings to the Security tab but don't fail the run, so the
       # publish jobs below can depend on this workflow succeeding.
       scan_fail_build: false
+      dockerhub_private: false
+      sync_description: true
       # Both variants inherit separate shared Aicodebox bases and build in parallel.
       build_targets: '[{"file":"Dockerfile","tag_suffix":""},{"file":"Dockerfile.full","tag_suffix":"-full"}]'
     secrets:
@@ -79,6 +81,8 @@ jobs:
       create_release: false
       scan_severity: "high"
       scan_fail_build: false
+      dockerhub_private: false
+      sync_description: true
     secrets:
       dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -101,6 +105,8 @@ jobs:
     with:
       skill_names: '["codexbox"]'
       plugin_names: '["codexbox"]'
+      pin_images: '["psyb0t/codexbox"]'
+      pin_source_urls: true
     secrets:
       clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}
 

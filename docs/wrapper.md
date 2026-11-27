@@ -1,7 +1,6 @@
 ---
 title: "The codexbox wrapper"
 description: "The codexbox host command: its subcommands, the per-directory container, host settings, CODEXBOX_ENV_ forwarding, sibling boxes and SSH agents."
-nav_order: 3
 ---
 
 # The codexbox wrapper

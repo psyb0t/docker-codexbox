@@ -1,8 +1,6 @@
 ---
 title: "Telegram mode"
 description: "Run Codex from Telegram with codexbox: allowed chats and users, per-chat workspaces, file transfer, bot commands and per-chat overrides."
-nav_order: 2
-parent: "Modes"
 ---
 
 # Telegram mode

@@ -4,6 +4,14 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.9, 2026-11-27
+
+- The documentation site is built with Docusaurus instead of Jekyll, from the same pages at the same addresses. `make docs` builds it in a pinned Node container and fails on a broken link or anchor, and a new `docs.yml` workflow publishes it to GitHub Pages. `docs/_config.yml`, `docs/_sass/` and `docs/llms.txt` are gone, and `llms.txt` now lives in `website/static/`.
+- The agent skill now lists the network hosts, shell commands and files it uses. It says the wrapper is not a sandbox: it uses host networking, always mounts the Docker socket and runs Codex with approvals and the sandbox off. It names the hosts your data goes to, and warns that deleting a file or a session has no undo, so it should only touch what the task created and only when you asked. Its `docker run` examples publish the server port on `127.0.0.1` only, and its install steps download the installer, read it, then run it.
+- When a release is tagged, ClawHub publishing rewrites the skill's raw GitHub links to that tag and pins `psyb0t/codexbox` in the skill to the release image digest, so the installer and the image the skill names are the released ones.
+- The image publish jobs set the Docker Hub repository public and sync its description explicitly.
+- The contributor rules in `.agents/rules/` are trimmed to the ones specific to this repository.
+
 ## v0.7.8, 2026-11-10
 
 - Builds on aicodebox v0.18.4, now pinned by tag and digest instead of following `latest`. That release fixes a 500 on OpenAI messages with null content, checks image-fetch redirects, rejects workspace symlinks that escape the root, makes MCP `run_prompt` take the workspace lock and retry `json_schema` runs, stops the Telegram bot on a malformed `TELEGRAM_CHAT_ID`, and prints cron `{system_datetime}` in UTC.

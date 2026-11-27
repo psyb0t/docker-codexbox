@@ -1,7 +1,6 @@
 ---
 title: "Troubleshooting"
 description: "codexbox error messages from the installer, the wrapper, API mode, Codex auth and MCP, with the cause of each and how to fix it."
-nav_order: 9
 ---
 
 # Troubleshooting

@@ -1,7 +1,6 @@
 ---
 title: "Install"
 description: "Install the codexbox wrapper with the one-line installer or from a checkout, pick the minimal or full image, and know what each image licenses."
-nav_order: 2
 ---
 
 # Install

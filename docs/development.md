@@ -1,7 +1,6 @@
 ---
 title: "Development"
 description: "Build, lint and test codexbox from a checkout with Make and Docker, what CI runs on each push, how releases are cut and how to build these docs."
-nav_order: 10
 ---
 
 # Development
@@ -97,10 +96,11 @@ make version V=0.7.7    # set it everywhere, without committing or tagging
 
 ## Documentation
 
-`docs/` is this site, built by GitHub Pages from `main` with Jekyll and the just-the-docs theme.
+`docs/` is this site, built with Docusaurus. The configuration, sidebar order and `llms.txt` live in `website/`, and `.github/workflows/docs.yml` publishes it to GitHub Pages from `main`.
 
 ```bash
-make docs   # build into .testing/docs-site with GitHub's own Pages image
+make docs        # build into website/build in a pinned Node container and check every link
+make docs-lock   # refresh website/pnpm-lock.yaml after a dependency change
 ```
 
-Every page needs front matter with a unique `title` and a `description` of 50 to 170 characters. Link between pages with the relative `.md` path. Link a file outside `docs/` with its full `https://github.com/psyb0t/docker-codexbox/blob/main/...` URL, because a relative `../` link breaks on the site.
+Every page needs front matter with a unique `title` and a `description` of 50 to 170 characters. Add a new page to `website/sidebars.mjs` and to `website/static/llms.txt`. Link between pages with the relative `.md` path. Link a file outside `docs/` with its full `https://github.com/psyb0t/docker-codexbox/blob/main/...` URL, because a relative `../` link breaks on the site.
