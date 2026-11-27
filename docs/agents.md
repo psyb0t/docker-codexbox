@@ -5,7 +5,7 @@ description: "Install the codexbox skill and plugins in Claude Code, Codex and O
 
 # Agent integrations
 
-The [codexbox skill](https://github.com/psyb0t/docker-codexbox/tree/main/.agents/skills/codexbox) teaches an agent to run Codex through the wrapper and to use a codexbox server's HTTP, MCP, Telegram and cron surfaces. It works in any agent that reads `.agents/skills/`, such as [peen](https://github.com/psyb0t/peen), and installs natively in the clients below.
+The [codexbox skill](https://github.com/psyb0t/docker-codexbox/tree/main/.agents/skills/codexbox) teaches an agent to use an already-installed codexbox: run Codex through the wrapper and use a server's HTTP, MCP, Telegram and cron surfaces. Setup stays in these docs. It works in any agent that reads `.agents/skills/`, such as [peen](https://github.com/psyb0t/peen), and installs natively in the clients below.
 
 ## Claude Code
 
@@ -55,7 +55,7 @@ The plugin does not ship Codex or start a container. It connects to a codexbox s
 
 | Path | What it is |
 | --- | --- |
-| [`.agents/skills/codexbox/`](https://github.com/psyb0t/docker-codexbox/tree/main/.agents/skills/codexbox) | The skill and its setup reference |
+| [`.agents/skills/codexbox/`](https://github.com/psyb0t/docker-codexbox/tree/main/.agents/skills/codexbox) | The skill |
 | [`.agents/.claude-plugin/plugin.json`](https://github.com/psyb0t/docker-codexbox/blob/main/.agents/.claude-plugin/plugin.json) | Claude Code plugin manifest, with the URL and token prompts |
 | [`.agents/.codex-plugin/plugin.json`](https://github.com/psyb0t/docker-codexbox/blob/main/.agents/.codex-plugin/plugin.json) | Codex plugin manifest |
 | [`.agents/plugins/codexbox/`](https://github.com/psyb0t/docker-codexbox/tree/main/.agents/plugins/codexbox) | The OpenClaw MCP bridge |

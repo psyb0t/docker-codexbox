@@ -105,8 +105,6 @@ jobs:
     with:
       skill_names: '["codexbox"]'
       plugin_names: '["codexbox"]'
-      pin_images: '["psyb0t/codexbox"]'
-      pin_source_urls: true
     secrets:
       clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}
 

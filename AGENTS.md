@@ -46,7 +46,7 @@ Data flow in a server mode: client -> aicodebox mode (API, MCP, Telegram, cron) 
 | `test.sh`, `tests/` | E2E runner (`tests/test_smoke.sh`, `tests/e2e-common.sh`) and standalone shell tests |
 | `docs/` | Documentation pages, published from `main` |
 | `website/` | Docusaurus config, sidebar order (`sidebars.mjs`), lockfile and `static/llms.txt` |
-| `.agents/skills/codexbox/` | The agent skill and `references/setup.md` |
+| `.agents/skills/codexbox/` | The agent skill |
 | `.agents/plugins/codexbox/` | The OpenClaw stdio-to-HTTP MCP bridge |
 | `.agents/.claude-plugin/`, `.agents/.codex-plugin/` | Claude Code and Codex plugin manifests |
 | `.agents/rules/` | Rules for changes in this repository |

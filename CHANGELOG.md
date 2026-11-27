@@ -4,6 +4,13 @@ All notable changes per release. Versions follow [semver](https://semver.org)
 pre-1.0 conventions: minor bumps may include breaking REST changes (called
 out explicitly), patch bumps are docs / build / fixes only.
 
+## v0.7.10, 2026-11-27
+
+- The agent skill now covers only using a codexbox that is already installed and running: the `codexbox` command and the HTTP, OpenAI-compatible, MCP, Telegram and cron surfaces. Installer steps, wrapper internals and server setup are out of the skill and stay in the [documentation](https://psyb0t.github.io/docker-codexbox/) and the README. `references/setup.md` is removed.
+- The skill's safety notes are stated once: deleting files or sessions has no undo, codexbox is not a sandbox, which hosts receive data, and an unset API or MCP token means no authentication.
+- The ClawHub publish job no longer sets `pin_images` or `pin_source_urls`, so publishing no longer rewrites the skill's links or pins the image digest.
+- Rule AGT1 now says the skill covers use of the running tool and links the docs for setup. Rule AGT6 drops the piped installer from the skill's safety section and leaves host networking and Docker socket details to the docs.
+
 ## v0.7.9, 2026-11-27
 
 - The documentation site is built with Docusaurus instead of Jekyll, from the same pages at the same addresses. `make docs` builds it in a pinned Node container and fails on a broken link or anchor, and a new `docs.yml` workflow publishes it to GitHub Pages. `docs/_config.yml`, `docs/_sass/` and `docs/llms.txt` are gone, and `llms.txt` now lives in `website/static/`.
